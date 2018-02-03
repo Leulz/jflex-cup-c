@@ -8,6 +8,8 @@ parser code {:
 
 // Terminals (tokens returned by the scanner)
 terminal	IDENTIFIER;
+terminal  ENUMERATION_CONSTANT;
+terminal  TYPEDEF_NAME;
 
 terminal	AUTO;
 terminal	BREAK;
@@ -111,8 +113,21 @@ terminal	OR;			// |
 terminal	QUESTION;	// ?
 
 // Nonterminals
-non terminal ProgramNode      program;
-
+non terminal translation_unit, external_declaration, function_definition, declaration_list, primary_expression;
+non terminal constant, enumeration_constant, string, generic_selection, generic_assoc_list, generic_association;
+non terminal postfix_expression, argument_expression_list, unary_expression, unary_operator, cast_expression;
+non terminal multiplicative_expression, additive_expression, shift_expression, relational_expression;
+non terminal equality_expression, and_expression, exclusive_or_expression, inclusive_or_expression;
+non terminal logical_and_expression, logical_or_expression, conditional_expression, assignment_expression;
+non terminal assignment_operator, expression, constant_expression, declaration, declaration_specifiers;
+non terminal init_declarator_list, init_declarator, storage_class_specifier, type_specifier, struct_or_union_specifier;
+non terminal struct_or_union, struct_declaration_list, struct_declaration, specifier_qualifier_list, struct_declarator_list;
+non terminal struct_declarator, enum_specifier, enumerator_list, enumerator, atomic_type_specifier, type_qualifier;
+non terminal function_specifier, alignment_specifier, declarator, direct_declarator, pointer, type_qualifier_list;
+non terminal parameter_type_list, parameter_list, parameter_declaration, identifier_list, type_name, abstract_declarator;
+non terminal direct_abstract_declarator, initializer, initializer_list, designation, designator_list, designator;
+non terminal static_assert_declaration, statement, labeled_statement, compound_statement, block_item_list;
+non terminal block_item, expression_statement, selection_statement, iteration_statement, jump_statement;
 
 start with translation_unit;
 

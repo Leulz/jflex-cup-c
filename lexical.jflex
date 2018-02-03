@@ -17,6 +17,14 @@ import java_cup.runtime.*;
   private Symbol symbol(int type, Object value) {
     return new Symbol(type, yyline, yycolumn, value);
   }
+  /**
+   * Reports an error occured in a given line.
+   * @param line The bad line
+   * @param msg Additional information about the error
+   */
+  private void reportError(int line, String msg) {
+    throw new RuntimeException("Lexical error at line #" + line + ": " + msg);
+  }
 %}
 
 //Macros from http://www.quut.com/c/ANSI-C-grammar-l-2011.html with minor changes
@@ -34,7 +42,7 @@ IS = (((u|U)(l|L|ll|LL)?)|((l|L|ll|LL)(u|U)?))
 CP = (u|U|L)
 SP = (u8|u|U|L)
 ES = (\\([\'\"\?\\abfnrtv]|[0-7]{1,3}|x[a-fA-F0-9]+))
-WS = \r|\n|\r\n
+WS = [ \t\v\n\f]
 
 Identifier = {L}{A}*
 InputCharacter = [^\r\n]
@@ -66,7 +74,7 @@ EndOfLineComment     = "//" {InputCharacter}* {WS}?
   "goto"                                  { return symbol(sym.GOTO); }
   "if"                                    { return symbol(sym.IF); }
   "inline"                                { return symbol(sym.INLINE); }
-  "int"                                   { return symbol(sym.INT); }
+  "int"                                   { System.out.println("Saw int"); return symbol(sym.INT); }
   "long"                                  { return symbol(sym.LONG); }
   "register"                              { return symbol(sym.REGISTER); }
   "restrict"                              { return symbol(sym.RESTRICT); }
@@ -96,7 +104,7 @@ EndOfLineComment     = "//" {InputCharacter}* {WS}?
   "__func__"                              { return symbol(sym.FUNC_NAME); }
 
   /* identifiers */ 
-  {Identifier}                            { return symbol(sym.IDENTIFIER); }
+  {Identifier}                            { System.out.println("Saw ID"); return symbol(sym.IDENTIFIER); }
 
   {HP}{H}+{IS}?                           { return symbol(sym.I_CONSTANT); }
   {NZ}{D}*{IS}?                           { return symbol(sym.I_CONSTANT); }
@@ -144,8 +152,8 @@ EndOfLineComment     = "//" {InputCharacter}* {WS}?
   "="                                     { return symbol(sym.ASSIGN); }
   "("                                     { return symbol(sym.LPAREN); }
   ")"                                     { return symbol(sym.RPAREN); }
-  ("["|"<:")                              { return symbol(sym.LBRACK); }
-  ("]"|":>")                              { return symbol(sym.RBRACK); }
+  ("["|"<:")                              { return symbol(sym.LBRACKET); }
+  ("]"|":>")                              { return symbol(sym.RBRACKET); }
   "."                                     { return symbol(sym.DOT); }
   "&"                                     { return symbol(sym.AND); }
   "!"                                     { return symbol(sym.NE); }
@@ -166,4 +174,5 @@ EndOfLineComment     = "//" {InputCharacter}* {WS}?
  
   /* whitespace */
   {WS}                                    { /* ignore */ }
+  [^]                                     { reportError(yyline+1, "Illegal character \"" + yytext() + "\""); }
 }
