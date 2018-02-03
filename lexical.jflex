@@ -19,6 +19,7 @@ import java_cup.runtime.*;
   }
 %}
 
+//Macros from http://www.quut.com/c/ANSI-C-grammar-l-2011.html with minor changes
 O = [0-7]
 D = [0-9]
 NZ = [1-9]
@@ -32,10 +33,10 @@ FS = (f|F|l|L)
 IS = (((u|U)(l|L|ll|LL)?)|((l|L|ll|LL)(u|U)?))
 CP = (u|U|L)
 SP = (u8|u|U|L)
-//ES = (\\(['"\?\\abfnrtv]|[0-7]{1,3}|x[a-fA-F0-9]+))  Copiei esse macro da definição do Lex disponibilizado em http://www.quut.com/c/ANSI-C-grammar-l-2011.html, mas está dando erro.
+ES = (\\([\'\"\?\\abfnrtv]|[0-7]{1,3}|x[a-fA-F0-9]+))
 WS = \r|\n|\r\n
 
-Identifier = {L} {A}*
+Identifier = {L}{A}*
 InputCharacter = [^\r\n]
 DecIntegerLiteral = 0 | {NZ}{D}*
 
