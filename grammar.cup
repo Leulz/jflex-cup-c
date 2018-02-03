@@ -6,8 +6,469 @@ parser code {:
   }
 :};
 
-terminal IDENTIFIER, INTEGER_LITERAL, STRING_LITERAL, EQ, EQEQ, PLUS;
+// Terminals (tokens returned by the scanner)
+terminal	IDENTIFIER;
 
-non terminal Object program;
+terminal	AUTO;
+terminal	BREAK;
+terminal	CASE;
+terminal	CHAR;
+terminal	CONST;
+terminal	CONTINUE;
+terminal	DEFAULT;
+terminal	DO;
+terminal	DOUBLE;
+terminal	ELSE;
+terminal	ENUM;
+terminal	EXTERN;
 
-program ::= IDENTIFIER | INTEGER_LITERAL | EQ | EQEQ | PLUS | STRING_LITERAL;
+terminal	FLOAT;
+terminal	FOR;
+terminal	GOTO;
+terminal	IF;
+terminal	INLINE;
+terminal	INT;
+terminal	LONG;
+terminal	REGISTER;
+terminal	RESTRICT;
+terminal	RETURN;
+terminal	SHORT;
+
+terminal	SIGNED;
+terminal	SIZEOF;
+terminal	STATIC;
+terminal	STRUCT;
+terminal	SWITCH;
+terminal	TYPEDEF;
+terminal	UNION;
+terminal	UNSIGNED;
+terminal	VOID;
+terminal	VOLATILE;
+terminal	WHILE;
+
+terminal	ALIGNAS;
+terminal	ALIGNOF;
+terminal	ATOMIC;
+terminal	BOOL;
+terminal	COMPLEX;
+terminal	GENERIC;
+terminal	IMAGINARY;
+terminal	NORETURN;
+terminal	STATIC_ASSERT;
+terminal	THREAD_LOCAL;
+
+terminal	FUNC_NAME;
+terminal	I_CONSTANT;
+terminal	F_CONSTANT;
+terminal	STRING_LITERAL;
+
+terminal	ELLIPSIS;		// ...
+terminal	RIGHT_ASSIGN;	// >>=
+terminal	LEFT_ASSIGN;	// <<=
+terminal	ADD_ASSIGN;		// +=
+terminal	SUB_ASSIGN;		// -=
+terminal	MUL_ASSIGN;		// *=
+terminal	DIV_ASSIGN;		// /=
+terminal	MOD_ASSIGN;		// %=
+terminal	AND_ASSIGN;		// &=
+terminal	XOR_ASSIGN;		// ^=
+terminal	OR_ASSIGN;		// |=
+terminal	RIGHT_OP;		// >>
+terminal	LEFT_OP;		// <<
+terminal	INC_OP;			// ++
+terminal	DEC_OP;			// --
+terminal	PTR_OP;			// ->
+terminal	AND_OP;			// &&
+terminal	OR_OP;			// ||
+terminal	LE_OP;			// <=
+terminal	GE_OP;			// >=
+terminal	EQ_OP;			// ==
+terminal	NE_OP;			// !=
+
+terminal	SEMICOLON;	// ;
+terminal	LCURLY;		// {
+terminal	RCURLY;		// }
+terminal	COMMA;		// ,
+terminal	COLON;		// :
+terminal	ASSIGN;		// =
+terminal	LPAREN;		// (
+terminal	RPAREN;		// )
+terminal	LBRACKET;	// [
+terminal	RBRACKET;	// ]
+terminal	DOT;		// .
+terminal	AND;		// &
+terminal	NE;			// !
+terminal	COMPLEMENT;	// ~
+terminal	SUB;		// -
+terminal	ADD;		// +
+terminal	MUL;		// *
+terminal	DIV;		// /
+terminal	MOD;		// %
+terminal	LE;			// <
+terminal	GE;			// >
+terminal	XOR;		// ^
+terminal	OR;			// |
+terminal	QUESTION;	// ?
+
+// Nonterminals
+non terminal ProgramNode      program;
+
+
+start with translation_unit;
+
+translation_unit	::= external_declaration
+					| translation_unit external_declaration;
+
+external_declaration	::= function_definition
+						| declaration;
+
+function_definition	::= declaration_specifiers declarator declaration_list compound_statement
+					| declaration_specifiers declarator compound_statement;
+
+declaration_list	::= declaration
+					| declaration_list declaration;
+
+primary_expression	::= IDENTIFIER
+					| constant
+					| string
+					| LPAREN expression RPAREN
+					| generic_selection;
+
+// includes character_constant
+constant	::= I_CONSTANT
+			| F_CONSTANT
+			| ENUMERATION_CONSTANT;
+
+// before it has been defined as such
+enumeration_constant	::= IDENTIFIER;
+
+string	::= STRING_LITERAL
+		| FUNC_NAME;
+
+generic_selection	::= GENERIC LPAREN assignment_expression COMMA generic_assoc_list RPAREN;
+
+generic_assoc_list	::= generic_association
+					| generic_assoc_list COMMA generic_association;
+
+generic_association	::= type_name COLON assignment_expression
+					| DEFAULT COLON assignment_expression;
+
+postfix_expression	::= primary_expression
+					| postfix_expression LBRACKET expression RBRACKET
+					| postfix_expression LPAREN RPAREN
+					| postfix_expression LPAREN argument_expression_list RPAREN
+					| postfix_expression DOT IDENTIFIER
+					| postfix_expression PTR_OP IDENTIFIER
+					| postfix_expression INC_OP
+					| postfix_expression DEC_OP
+					| LPAREN type_name RPAREN LCURLY initializer_list RCURLY
+					| LPAREN type_name RPAREN LCURLY initializer_list COMMA RCURLY;
+
+argument_expression_list	::= assignment_expression
+							| argument_expression_list COMMA assignment_expression;
+
+unary_expression	::= postfix_expression
+					| INC_OP unary_expression
+					| DEC_OP unary_expression
+					| unary_operator cast_expression
+					| SIZEOF unary_expression
+					| SIZEOF LPAREN type_name RPAREN
+					| ALIGNOF LPAREN type_name RPAREN;
+
+unary_operator	::= AND
+				| MUL
+				| ADD
+				| SUB
+				| COMPLEMENT
+				| NE;
+
+cast_expression	::= unary_expression
+				| LPAREN type_name RPAREN cast_expression;
+
+multiplicative_expression	::= cast_expression
+							| multiplicative_expression MUL cast_expression
+							| multiplicative_expression DIV cast_expression
+							| multiplicative_expression MOD cast_expression;
+
+additive_expression	::= multiplicative_expression
+					| additive_expression ADD multiplicative_expression
+					| additive_expression SUB multiplicative_expression;
+
+shift_expression	::= additive_expression
+					| shift_expression LEFT_OP additive_expression
+					| shift_expression RIGHT_OP additive_expression;
+
+relational_expression	::= shift_expression
+						| relational_expression LE shift_expression
+						| relational_expression GE shift_expression
+						| relational_expression LE_OP shift_expression
+						| relational_expression GE_OP shift_expression;
+
+equality_expression	::= relational_expression
+					| equality_expression EQ_OP relational_expression
+					| equality_expression NE_OP relational_expression;
+
+and_expression	::= equality_expression
+				| and_expression AND equality_expression;
+
+exclusive_or_expression	::= and_expression
+						| exclusive_or_expression XOR and_expression;
+
+inclusive_or_expression	::= exclusive_or_expression
+						| inclusive_or_expression OR exclusive_or_expression;
+
+logical_and_expression	::= inclusive_or_expression
+						| logical_and_expression AND_OP inclusive_or_expression;
+
+logical_or_expression	::= logical_and_expression
+						| logical_or_expression OR_OP logical_and_expression;
+
+conditional_expression	::= logical_or_expression
+						| logical_or_expression QUESTION expression COLON conditional_expression;
+
+assignment_expression	::= conditional_expression
+						| unary_expression assignment_operator assignment_expression;
+
+assignment_operator	::= ASSIGN
+					| MUL_ASSIGN
+					| DIV_ASSIGN
+					| MOD_ASSIGN
+					| ADD_ASSIGN
+					| SUB_ASSIGN
+					| LEFT_ASSIGN
+					| RIGHT_ASSIGN
+					| AND_ASSIGN
+					| XOR_ASSIGN
+					| OR_ASSIGN;
+
+expression	::= assignment_expression
+			| expression COMMA assignment_expression;
+
+// with constraints
+constant_expression	::= conditional_expression;
+
+declaration	::= declaration_specifiers SEMICOLON
+			| declaration_specifiers init_declarator_list SEMICOLON
+			| static_assert_declaration;
+
+declaration_specifiers	::= storage_class_specifier declaration_specifiers
+						| storage_class_specifier
+						| type_specifier declaration_specifiers
+						| type_specifier
+						| type_qualifier declaration_specifiers
+						| type_qualifier
+						| function_specifier declaration_specifiers
+						| function_specifier
+						| alignment_specifier declaration_specifiers
+						| alignment_specifier;
+
+init_declarator_list	::= init_declarator
+						| init_declarator_list COMMA init_declarator;
+
+init_declarator	::= declarator ASSIGN initializer
+				| declarator;
+
+// identifiers must be flagged as TYPEDEF_NAME
+storage_class_specifier ::= TYPEDEF
+						| EXTERN
+						| STATIC
+						| THREAD_LOCAL
+						| AUTO
+						| REGISTER;
+
+type_specifier	::= VOID
+				| CHAR
+				| SHORT
+				| INT
+				| LONG
+				| FLOAT
+				| DOUBLE
+				| SIGNED
+				| UNSIGNED
+				| BOOL
+				| COMPLEX
+				| IMAGINARY
+				| atomic_type_specifier
+				| struct_or_union_specifier
+				| enum_specifier
+				| TYPEDEF_NAME;
+
+struct_or_union_specifier	::= struct_or_union LCURLY struct_declaration_list RCURLY
+							| struct_or_union IDENTIFIER LCURLY struct_declaration_list RCURLY
+							| struct_or_union IDENTIFIER;
+
+struct_or_union ::= STRUCT
+				| UNION;
+
+struct_declaration_list	::= struct_declaration
+						| struct_declaration_list struct_declaration;
+
+// for anonymous struct/union
+struct_declaration	::= specifier_qualifier_list SEMICOLON
+					| specifier_qualifier_list struct_declarator_list SEMICOLON
+					| static_assert_declaration;
+
+specifier_qualifier_list	::= type_specifier specifier_qualifier_list
+							| type_specifier
+							| type_qualifier specifier_qualifier_list
+							| type_qualifier;
+
+struct_declarator_list	::= struct_declarator
+						| struct_declarator_list COMMA struct_declarator;
+
+struct_declarator	::= COLON constant_expression
+					| declarator COLON constant_expression
+					| declarator;
+
+enum_specifier	::= ENUM LCURLY enumerator_list RCURLY
+				| ENUM LCURLY enumerator_list COMMA RCURLY
+				| ENUM IDENTIFIER LCURLY enumerator_list RCURLY
+				| ENUM IDENTIFIER LCURLY enumerator_list COMMA RCURLY
+				| ENUM IDENTIFIER;
+
+enumerator_list	::= enumerator
+				| enumerator_list COMMA enumerator;
+
+// identifiers must be flagged as ENUMERATION_CONSTANT
+enumerator	::= enumeration_constant ASSIGN constant_expression
+			| enumeration_constant;
+
+atomic_type_specifier	::= ATOMIC LPAREN type_name RPAREN;
+
+type_qualifier	::= CONST
+				| RESTRICT
+				| VOLATILE
+				| ATOMIC;
+
+function_specifier	::= INLINE
+					| NORETURN;
+
+alignment_specifier	::= ALIGNAS LPAREN type_name RPAREN
+					| ALIGNAS LPAREN constant_expression RPAREN;
+
+declarator	::= pointer direct_declarator
+			| direct_declarator;
+
+direct_declarator	::= IDENTIFIER
+					| LPAREN declarator RPAREN
+					| direct_declarator LBRACKET RBRACKET
+					| direct_declarator LBRACKET MUL RBRACKET
+					| direct_declarator LBRACKET STATIC type_qualifier_list assignment_expression RBRACKET
+					| direct_declarator LBRACKET STATIC assignment_expression RBRACKET
+					| direct_declarator LBRACKET type_qualifier_list MUL RBRACKET
+					| direct_declarator LBRACKET type_qualifier_list STATIC assignment_expression RBRACKET
+					| direct_declarator LBRACKET type_qualifier_list assignment_expression RBRACKET
+					| direct_declarator LBRACKET type_qualifier_list RBRACKET
+					| direct_declarator LBRACKET assignment_expression RBRACKET
+					| direct_declarator LPAREN parameter_type_list RPAREN
+					| direct_declarator LPAREN RPAREN
+					| direct_declarator LPAREN identifier_list RPAREN;
+
+pointer	::= MUL type_qualifier_list pointer
+		| MUL type_qualifier_list
+		| MUL pointer
+		| MUL;
+
+type_qualifier_list	::= type_qualifier
+					| type_qualifier_list type_qualifier;
+
+parameter_type_list	::= parameter_list COMMA ELLIPSIS
+					| parameter_list;
+
+parameter_list	::= parameter_declaration
+				| parameter_list COMMA parameter_declaration;
+
+parameter_declaration	::= declaration_specifiers declarator
+						| declaration_specifiers abstract_declarator
+						| declaration_specifiers;
+
+identifier_list	::= IDENTIFIER
+				| identifier_list COMMA IDENTIFIER;
+
+type_name	::= specifier_qualifier_list abstract_declarator
+			| specifier_qualifier_list;
+
+abstract_declarator	::= pointer direct_abstract_declarator
+					| pointer
+					| direct_abstract_declarator;
+
+direct_abstract_declarator	::= LPAREN abstract_declarator RPAREN
+							| LBRACKET RBRACKET
+							| LBRACKET MUL RBRACKET
+							| LBRACKET STATIC type_qualifier_list assignment_expression RBRACKET
+							| LBRACKET STATIC assignment_expression RBRACKET
+							| LBRACKET type_qualifier_list STATIC assignment_expression RBRACKET
+							| LBRACKET type_qualifier_list assignment_expression RBRACKET
+							| LBRACKET type_qualifier_list RBRACKET
+							| LBRACKET assignment_expression RBRACKET
+							| direct_abstract_declarator LBRACKET RBRACKET
+							| direct_abstract_declarator LBRACKET MUL RBRACKET
+							| direct_abstract_declarator LBRACKET STATIC type_qualifier_list assignment_expression RBRACKET
+							| direct_abstract_declarator LBRACKET STATIC assignment_expression RBRACKET
+							| direct_abstract_declarator LBRACKET type_qualifier_list assignment_expression RBRACKET
+							| direct_abstract_declarator LBRACKET type_qualifier_list STATIC assignment_expression RBRACKET
+							| direct_abstract_declarator LBRACKET type_qualifier_list RBRACKET
+							| direct_abstract_declarator LBRACKET assignment_expression RBRACKET
+							| LPAREN RPAREN
+							| LPAREN parameter_type_list RPAREN
+							| direct_abstract_declarator LPAREN RPAREN
+							| direct_abstract_declarator LPAREN parameter_type_list RPAREN;
+
+initializer	::= LCURLY initializer_list RCURLY
+			| LCURLY initializer_list COMMA RCURLY
+			| assignment_expression;
+
+initializer_list	::= designation initializer
+					| initializer
+					| initializer_list COMMA designation initializer
+					| initializer_list COMMA initializer;
+
+designation	::= designator_list ASSIGN;
+
+designator_list	::= designator
+				| designator_list designator;
+
+designator	::= LBRACKET constant_expression RBRACKET
+			| DOT IDENTIFIER;
+
+static_assert_declaration	::= STATIC_ASSERT LPAREN constant_expression COMMA STRING_LITERAL RPAREN SEMICOLON;
+
+statement	::= labeled_statement
+			| compound_statement
+			| expression_statement
+			| selection_statement
+			| iteration_statement
+			| jump_statement;
+
+labeled_statement	::= IDENTIFIER COLON statement
+					| CASE constant_expression COLON statement
+					| DEFAULT COLON statement;
+
+compound_statement	::= LCURLY RCURLY
+					| LCURLY  block_item_list RCURLY;
+
+block_item_list	::= block_item
+				| block_item_list block_item;
+
+block_item	::= declaration
+			| statement;
+
+expression_statement	::= SEMICOLON
+						| expression SEMICOLON;
+
+selection_statement	::= IF LPAREN expression RPAREN statement ELSE statement
+					| IF LPAREN expression RPAREN statement
+					| SWITCH LPAREN expression RPAREN statement;
+
+iteration_statement	::= WHILE LPAREN expression RPAREN statement
+					| DO statement WHILE LPAREN expression RPAREN SEMICOLON
+					| FOR LPAREN expression_statement expression_statement RPAREN statement
+					| FOR LPAREN expression_statement expression_statement expression RPAREN statement
+					| FOR LPAREN declaration expression_statement RPAREN statement
+					| FOR LPAREN declaration expression_statement expression RPAREN statement;
+
+jump_statement	::= GOTO IDENTIFIER SEMICOLON
+				| CONTINUE SEMICOLON
+				| BREAK SEMICOLON
+				| RETURN SEMICOLON
+				| RETURN expression SEMICOLON;
