@@ -1,0 +1,13 @@
+import java_cup.runtime.*;
+
+parser code {:
+  public parser (java.io.Reader input) {
+    super(new Lexer(input));
+  }
+:};
+
+terminal IDENTIFIER, INTEGER_LITERAL, STRING_LITERAL, EQ, EQEQ, PLUS;
+
+non terminal Object program;
+
+program ::= IDENTIFIER | INTEGER_LITERAL | EQ | EQEQ | PLUS | STRING_LITERAL;

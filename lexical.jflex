@@ -51,20 +51,20 @@ EndOfLineComment     = "//" {InputCharacter}* {WS}?
 
 <YYINITIAL> {
   /* identifiers */ 
-  {Identifier}                   { return symbol(sym.IDENTIFIER); }
+  {Identifier}                      { return symbol(sym.IDENTIFIER); }
  
   /* literals */
-  {DecIntegerLiteral}            { return symbol(sym.INTEGER_LITERAL); }
-  \"                             { string.setLength(0); yybegin(STRING); }
+  {DecIntegerLiteral}               { return symbol(sym.INTEGER_LITERAL); }
+  ({SP}?\"([^\"\\\n]|{ES})*\"{WS}*)+ { return symbol(sym.STRING_LITERAL); }
 
   /* operators */
-  "="                            { return symbol(sym.EQ); }
-  "=="                           { return symbol(sym.EQEQ); }
-  "+"                            { return symbol(sym.PLUS); }
+  "="                               { return symbol(sym.EQ); }
+  "=="                              { return symbol(sym.EQEQ); }
+  "+"                               { return symbol(sym.PLUS); }
 
   /* comments */
-  {Comment}                      { /* ignore */ }
+  {Comment}                         { /* ignore */ }
  
   /* whitespace */
-  {WS}                           { /* ignore */ }
+  {WS}                              { /* ignore */ }
 }
