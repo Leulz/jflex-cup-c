@@ -7,6 +7,7 @@ import java_cup.runtime.*;
 %cup
 %line
 %column
+//%debug
 
 %{
   StringBuffer string = new StringBuffer();
@@ -74,7 +75,7 @@ EndOfLineComment     = "//" {InputCharacter}* {WS}?
   "goto"                                  { return symbol(sym.GOTO); }
   "if"                                    { return symbol(sym.IF); }
   "inline"                                { return symbol(sym.INLINE); }
-  "int"                                   { System.out.println("Saw int"); return symbol(sym.INT); }
+  "int"                                   { return symbol(sym.INT); }
   "long"                                  { return symbol(sym.LONG); }
   "register"                              { return symbol(sym.REGISTER); }
   "restrict"                              { return symbol(sym.RESTRICT); }
@@ -104,7 +105,7 @@ EndOfLineComment     = "//" {InputCharacter}* {WS}?
   "__func__"                              { return symbol(sym.FUNC_NAME); }
 
   /* identifiers */ 
-  {Identifier}                            { System.out.println("Saw ID"); return symbol(sym.IDENTIFIER); }
+  {Identifier}                            { return symbol(sym.IDENTIFIER); }
 
   {HP}{H}+{IS}?                           { return symbol(sym.I_CONSTANT); }
   {NZ}{D}*{IS}?                           { return symbol(sym.I_CONSTANT); }
