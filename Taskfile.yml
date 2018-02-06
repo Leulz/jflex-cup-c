@@ -7,7 +7,7 @@ clean:
 make:
   cmds:
     - jflex lexical.jflex
-    - java -jar lib\java-cup-11a.jar -interface -expect 2 -dump_grammar < grammar.cup > grammar_dump 2>&1
+    - java -jar lib/java-cup-11a.jar -interface -expect 2 -dump_grammar < grammar.cup > grammar_dump 2>&1
     - javac -cp ".;lib/java-cup-11a.jar" Main.java
 
 debug:
