@@ -5,8 +5,10 @@ make:
 clean:
 	rm parser.* sym.* Lexer.* CUP\$$parser\$$actions.class Main.class
 test:
+	touch error.log
+	truncate -s 0 error.log
 	for filename in examples/*.c ; do \
-		java -cp .:lib/java-cup-11a-runtime.jar Main $$filename ; \
+		java -cp .:lib/java-cup-11a-runtime.jar Main $$filename 2>&1 | sed "s,^,Error in $$filename: ," >> error.log ; \
 	done
 debug:
 	java -cp .:lib/java-cup-11a-runtime.jar Main example.c "debug"

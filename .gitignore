@@ -2,3 +2,4 @@
 *~
 *.out
 grammar_dump
+*.log
