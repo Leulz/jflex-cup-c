@@ -1,0 +1,25 @@
+# github.com/go-task/task
+
+clean:
+  cmds:
+    - rm parser.* sym.* Lexer.* *.class *.log
+
+make:
+  cmds:
+    - jflex lexical.jflex
+    - java -jar lib\java-cup-11a.jar -interface -expect 2 -dump_grammar < grammar.cup > grammar_dump 2>&1
+    - javac -cp ".;lib/java-cup-11a.jar" Main.java
+
+debug:
+  cmds:
+    - java -cp .;lib\java-cup-11a-runtime.jar Main tests/test_success.c "debug"
+
+test:
+  cmds:
+    - touch error.log
+    - truncate -s 0 error.log
+    - java -cp ".;lib/java-cup-11a-runtime.jar" Main tests/test_error.c 2>&1 | sed "s,^,Error in tests/test_error.c = ," > error1.log
+    - java -cp ".;lib/java-cup-11a-runtime.jar" Main tests/test_error2.c 2>&1 | sed "s,^,Error in tests/test_error2.c = ," > error2.log
+    - java -cp ".;lib/java-cup-11a-runtime.jar" Main tests/test_success.c 2>&1 | sed "s,^,Error in tests/test_success.c = ," > error3.log
+    - cat error1.log error2.log error3.log > error.log
+    - rm error1.log error2.log error3.log
