@@ -24,7 +24,12 @@ import java_cup.runtime.*;
    * @param msg Additional information about the error
    */
   private void reportError(int line, String msg) {
-    throw new RuntimeException("Lexical error at line #" + line + ": " + msg);
+      /* Create a StringBuilder called 'm' with the string 'Error' in it. */
+      StringBuilder m = new StringBuilder("Error in line " + line + ", column 0 : ");
+      m.append("Lexical error, " + msg);
+      /* Print the contents of the StringBuilder 'm', which contains
+        an error message, out on a line. */
+      System.err.println(m);
   }
 %}
 
