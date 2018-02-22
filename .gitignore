@@ -3,3 +3,5 @@
 *.out
 grammar_dump
 *.log
+.classpath
+.project
