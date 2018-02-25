@@ -1,7 +1,11 @@
 *.class
 *~
 *.out
+bin/*
 grammar_dump
 *.log
 .classpath
 .project
+parser.*
+sym.*
+Lexer.*
