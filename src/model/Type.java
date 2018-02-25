@@ -1,3 +1,5 @@
+package model;
+
 public class Type {
   
 	private String name;

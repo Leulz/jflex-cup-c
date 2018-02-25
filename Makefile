@@ -1,7 +1,7 @@
 make:
 	jflex lexical.jflex
 	java -cp .:lib/java-cup-11a.jar java_cup.Main -interface -expect 2 -dump_grammar < grammar.cup > grammar_dump 2>&1
-	javac -cp .:lib/java-cup-11a.jar Main.java
+	javac -cp .:bin:lib/java-cup-11a.jar Main.java
 clean:
 	rm parser.* sym.* Lexer.* *.class *.log
 test:

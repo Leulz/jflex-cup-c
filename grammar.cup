@@ -1,4 +1,5 @@
 import java_cup.runtime.*;
+import model.*;
 
 parser code {:
   public parser(java.io.Reader input) {
@@ -64,6 +65,8 @@ parser code {:
   	report_error(message, info);
   	System.exit(1);
   }
+  
+  private Semantic semanticAnalyser = new Semantic(); 
 :};
 
 // Terminals (tokens returned by the scanner)
@@ -328,7 +331,7 @@ declaration	::= declaration_specifiers SEMICOLON
 
 declaration_specifiers	::= storage_class_specifier declaration_specifiers
 						| storage_class_specifier
-						| type_specifier declaration_specifiers
+						| type_specifier:t declaration_specifiers {: System.out.println((Type) t); :}
 						| type_specifier
 						| type_qualifier declaration_specifiers
 						| type_qualifier
