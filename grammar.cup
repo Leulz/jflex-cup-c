@@ -1,6 +1,10 @@
 import java_cup.runtime.*;
 import model.*;
 
+action code {:
+  private Semantic semanticAnalyser = new Semantic();
+:};
+
 parser code {:
   public parser(java.io.Reader input) {
   	super(new Lexer(input));
@@ -65,8 +69,6 @@ parser code {:
   	report_error(message, info);
   	System.exit(1);
   }
-  
-  private Semantic semanticAnalyser = new Semantic(); 
 :};
 
 // Terminals (tokens returned by the scanner)
@@ -326,13 +328,13 @@ expression	::= assignment_expression
 constant_expression	::= conditional_expression;
 
 declaration	::= declaration_specifiers SEMICOLON
-			| declaration_specifiers init_declarator_list SEMICOLON
+			| declaration_specifiers:t init_declarator_list:v SEMICOLON {: semanticAnalyser.commitDeclaredVariables((Type) t); :}
 			| static_assert_declaration;
 
-declaration_specifiers	::= storage_class_specifier declaration_specifiers
+declaration_specifiers	::= storage_class_specifier declaration_specifiers:t {: RESULT = t; :}
 						| storage_class_specifier
-						| type_specifier:t declaration_specifiers {: System.out.println((Type) t); :}
-						| type_specifier
+						| type_specifier declaration_specifiers
+						| type_specifier:t {: RESULT = t; :}
 						| type_qualifier declaration_specifiers
 						| type_qualifier
 						| function_specifier declaration_specifiers
@@ -340,11 +342,11 @@ declaration_specifiers	::= storage_class_specifier declaration_specifiers
 						| alignment_specifier declaration_specifiers
 						| alignment_specifier;
 
-init_declarator_list	::= init_declarator
+init_declarator_list	::= init_declarator:v {: RESULT=v; :}
 						| init_declarator_list COMMA init_declarator;
 
 init_declarator	::= declarator ASSIGN initializer
-				| declarator;
+				| declarator:v {: RESULT=v; :};
 
 // identifiers must be flagged as TYPEDEF_NAME
 storage_class_specifier ::= TYPEDEF
@@ -357,7 +359,7 @@ storage_class_specifier ::= TYPEDEF
 type_specifier	::= VOID
 				| CHAR
 				| SHORT
-				| INT
+				| INT:i {: RESULT = new Type("int"); :}
 				| LONG
 				| FLOAT
 				| DOUBLE
@@ -425,9 +427,12 @@ alignment_specifier	::= ALIGNAS LPAREN type_name RPAREN
 					| ALIGNAS LPAREN constant_expression RPAREN;
 
 declarator	::= pointer direct_declarator
-			| direct_declarator;
+			| direct_declarator:v {: RESULT=v; :};
 
-direct_declarator	::= IDENTIFIER
+direct_declarator	::= IDENTIFIER:id {: System.out.println("Saw an identifier in a declaration.");
+                                      Variable v = new Variable((String) id, new Type("null"));
+                                      semanticAnalyser.addScopedVar(v);
+                                      RESULT = v; :}
 					| LPAREN declarator RPAREN
 					| direct_declarator LBRACKET RBRACKET
 					| direct_declarator LBRACKET MUL RBRACKET

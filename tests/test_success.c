@@ -5,7 +5,7 @@
 * comment!
 */
 
-typedef int i;
+int i;
 
 void function(int param1, int param2) {
   int ans = param1 + param2;

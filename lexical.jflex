@@ -13,7 +13,7 @@ import java_cup.runtime.*;
   StringBuffer string = new StringBuffer();
 
   private Symbol symbol(int type) {
-    return new Symbol(type, yyline, yycolumn);
+    return new Symbol(type, yyline, yycolumn, yytext());
   }
   private Symbol symbol(int type, Object value) {
     return new Symbol(type, yyline, yycolumn, value);
@@ -112,17 +112,17 @@ EndOfLineComment     = "//" {InputCharacter}* {WS}?
   /* identifiers */ 
   {Identifier}                            { return symbol(sym.IDENTIFIER); }
 
-  {HP}{H}+{IS}?                           { return symbol(sym.I_CONSTANT); }
-  {NZ}{D}*{IS}?                           { return symbol(sym.I_CONSTANT); }
-  "0"{O}*{IS}?                            { return symbol(sym.I_CONSTANT); }
-  {CP}?"'"([^'\\\n]|{ES})+"'"             { return symbol(sym.I_CONSTANT); }
+  {HP}{H}+{IS}?                           { return symbol(sym.I_CONSTANT, new String(yytext())); }
+  {NZ}{D}*{IS}?                           { return symbol(sym.I_CONSTANT, new String(yytext())); }
+  "0"{O}*{IS}?                            { return symbol(sym.I_CONSTANT, new String(yytext())); }
+  {CP}?"'"([^'\\\n]|{ES})+"'"             { return symbol(sym.I_CONSTANT, new String(yytext())); }
 
-  {D}+{E}{FS}?                            { return symbol(sym.F_CONSTANT); }
-  {D}*"."{D}+{E}?{FS}?                    { return symbol(sym.F_CONSTANT); }
-  {D}+"."{E}?{FS}?                        { return symbol(sym.F_CONSTANT); }
-  {HP}{H}+{P}{FS}?                        { return symbol(sym.F_CONSTANT); }
-  {HP}{H}*"."{H}+{P}{FS}?                 { return symbol(sym.F_CONSTANT); }
-  {HP}{H}+"."{P}{FS}?                     { return symbol(sym.F_CONSTANT); }
+  {D}+{E}{FS}?                            { return symbol(sym.F_CONSTANT, new String(yytext())); }
+  {D}*"."{D}+{E}?{FS}?                    { return symbol(sym.F_CONSTANT, new String(yytext())); }
+  {D}+"."{E}?{FS}?                        { return symbol(sym.F_CONSTANT, new String(yytext())); }
+  {HP}{H}+{P}{FS}?                        { return symbol(sym.F_CONSTANT, new String(yytext())); }
+  {HP}{H}*"."{H}+{P}{FS}?                 { return symbol(sym.F_CONSTANT, new String(yytext())); }
+  {HP}{H}+"."{P}{FS}?                     { return symbol(sym.F_CONSTANT, new String(yytext())); }
  
   /* literals */
   ({SP}?\"([^\"\\\n]|{ES})*\"{WS}*)+      { return symbol(sym.STRING_LITERAL); }
