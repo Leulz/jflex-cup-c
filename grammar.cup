@@ -73,8 +73,8 @@ parser code {:
 
 // Terminals (tokens returned by the scanner)
 terminal	IDENTIFIER;
-terminal  ENUMERATION_CONSTANT;
-terminal  TYPEDEF_NAME;
+terminal	ENUMERATION_CONSTANT;
+terminal	TYPEDEF_NAME;
 
 terminal	AUTO;
 terminal	BREAK;
@@ -208,6 +208,7 @@ function_definition	::= declaration_specifiers declarator declaration_list compo
 declaration_list	::= declaration
 					| declaration_list declaration;
 
+// eg: x , 12 , "oi" , (x >= 2) , _Generic(x = 1, int: x = 2)
 primary_expression	::= IDENTIFIER
 					| constant
 					| string
@@ -215,24 +216,31 @@ primary_expression	::= IDENTIFIER
 					| generic_selection;
 
 // includes character_constant
+// eg: 1001 , 20.5 , MAX
 constant	::= I_CONSTANT
 			| F_CONSTANT
 			| ENUMERATION_CONSTANT;
 
 // before it has been defined as such
+// eg: ML
 enumeration_constant	::= IDENTIFIER;
 
+// eg: "oi" , __func__
 string	::= STRING_LITERAL
 		| FUNC_NAME;
 
+// eg: _Generic(x = 1, int: x = 2)
 generic_selection	::= GENERIC LPAREN assignment_expression COMMA generic_assoc_list RPAREN;
 
+// eg: int: x = 2 , int: x = 2, default: x = 0
 generic_assoc_list	::= generic_association
 					| generic_assoc_list COMMA generic_association;
 
+// eg: int: x = 2 , default: x = 2
 generic_association	::= type_name COLON assignment_expression
 					| DEFAULT COLON assignment_expression;
 
+// eg: x , x(20) , f() , f(a = 2, b = 3) , x.a , x->a , x++ , x-- , (Retangle){a = 2} , {Retangle}{a = 2,}
 postfix_expression	::= primary_expression
 					| postfix_expression LBRACKET expression RBRACKET
 					| postfix_expression LPAREN RPAREN
@@ -244,9 +252,11 @@ postfix_expression	::= primary_expression
 					| LPAREN type_name RPAREN LCURLY initializer_list RCURLY
 					| LPAREN type_name RPAREN LCURLY initializer_list COMMA RCURLY;
 
+// eg: x = a + 2 , x = 2, a = 0
 argument_expression_list	::= assignment_expression
 							| argument_expression_list COMMA assignment_expression;
 
+// eg: x , ++x , --x , *(int) x , sizeof x , sizeof(int) , _Alignof(int)
 unary_expression	::= postfix_expression
 					| INC_OP unary_expression
 					| DEC_OP unary_expression
@@ -255,6 +265,7 @@ unary_expression	::= postfix_expression
 					| SIZEOF LPAREN type_name RPAREN
 					| ALIGNOF LPAREN type_name RPAREN;
 
+// eg: & , * , + , - , ~ , !
 unary_operator	::= AND
 				| MUL
 				| ADD
@@ -262,53 +273,67 @@ unary_operator	::= AND
 				| COMPLEMENT
 				| NE;
 
+// eg: x , (int) x
 cast_expression	::= unary_expression
 				| LPAREN type_name RPAREN cast_expression;
 
+// eg: x , x * 2 , x / a , x % 5
 multiplicative_expression	::= cast_expression
 							| multiplicative_expression MUL cast_expression
 							| multiplicative_expression DIV cast_expression
 							| multiplicative_expression MOD cast_expression;
 
+// eg: x , x + 2 , x - 3
 additive_expression	::= multiplicative_expression
 					| additive_expression ADD multiplicative_expression
 					| additive_expression SUB multiplicative_expression;
 
+// eg: x , x << 2 , x >> a
 shift_expression	::= additive_expression
 					| shift_expression LEFT_OP additive_expression
 					| shift_expression RIGHT_OP additive_expression;
 
+// eg: x , x < 2 , x > a , x <= 12 , x >= b
 relational_expression	::= shift_expression
 						| relational_expression LE shift_expression
 						| relational_expression GE shift_expression
 						| relational_expression LE_OP shift_expression
 						| relational_expression GE_OP shift_expression;
 
+// eg: x , x == 0 , x != 12
 equality_expression	::= relational_expression
 					| equality_expression EQ_OP relational_expression
 					| equality_expression NE_OP relational_expression;
 
+// eg: x , x & y
 and_expression	::= equality_expression
 				| and_expression AND equality_expression;
 
+// eg: x , x ^ y
 exclusive_or_expression	::= and_expression
 						| exclusive_or_expression XOR and_expression;
 
+// eg: x , x | y
 inclusive_or_expression	::= exclusive_or_expression
 						| inclusive_or_expression OR exclusive_or_expression;
 
+// eg: x , x && a
 logical_and_expression	::= inclusive_or_expression
 						| logical_and_expression AND_OP inclusive_or_expression;
 
+// eg: x , x || a
 logical_or_expression	::= logical_and_expression
 						| logical_or_expression OR_OP logical_and_expression;
 
+// eg: x , x > 2 ? 12 : x + 12
 conditional_expression	::= logical_or_expression
 						| logical_or_expression QUESTION expression COLON conditional_expression;
 
+// eg: x , x++ = a + b
 assignment_expression	::= conditional_expression
 						| unary_expression assignment_operator assignment_expression;
 
+// eg: = , *= , /= , %= , += , -= , <<= , >>= , &= , ^= , |=
 assignment_operator	::= ASSIGN
 					| MUL_ASSIGN
 					| DIV_ASSIGN
@@ -321,10 +346,12 @@ assignment_operator	::= ASSIGN
 					| XOR_ASSIGN
 					| OR_ASSIGN;
 
+// eg: x , x, a = 2
 expression	::= assignment_expression
 			| expression COMMA assignment_expression;
 
 // with constraints
+// eg: x
 constant_expression	::= conditional_expression;
 
 declaration	::= declaration_specifiers SEMICOLON
@@ -356,6 +383,8 @@ storage_class_specifier ::= TYPEDEF
 						| AUTO
 						| REGISTER;
 
+// eg: void , char , short , int , long , float , double , signed , unsigned ,
+// bool , _Complex , _Imaginary
 type_specifier	::= VOID
 				| CHAR
 				| SHORT
@@ -377,6 +406,7 @@ struct_or_union_specifier	::= struct_or_union LCURLY struct_declaration_list RCU
 							| struct_or_union IDENTIFIER LCURLY struct_declaration_list RCURLY
 							| struct_or_union IDENTIFIER;
 
+// eg: struct , union
 struct_or_union ::= STRUCT
 				| UNION;
 
@@ -413,16 +443,20 @@ enumerator_list	::= enumerator
 enumerator	::= enumeration_constant ASSIGN constant_expression
 			| enumeration_constant;
 
+// eg: _Atomic (int)
 atomic_type_specifier	::= ATOMIC LPAREN type_name RPAREN;
 
+// eg: const | restrict | volatile | _Atomic
 type_qualifier	::= CONST
 				| RESTRICT
 				| VOLATILE
 				| ATOMIC;
 
+// eg: inline | _Noreturn
 function_specifier	::= INLINE
 					| NORETURN;
 
+// eg: _Alignas (int) | _Alignas ()
 alignment_specifier	::= ALIGNAS LPAREN type_name RPAREN
 					| ALIGNAS LPAREN constant_expression RPAREN;
 
@@ -465,6 +499,7 @@ parameter_declaration	::= declaration_specifiers declarator
 						| declaration_specifiers abstract_declarator
 						| declaration_specifiers;
 
+// eg: x , x, a, b
 identifier_list	::= IDENTIFIER
 				| identifier_list COMMA IDENTIFIER;
 
@@ -527,22 +562,28 @@ labeled_statement	::= IDENTIFIER COLON statement
 					| CASE constant_expression COLON statement
 					| DEFAULT COLON statement;
 
+// eg: {} , { int i = 0; }
 compound_statement	::= LCURLY RCURLY
 					| LCURLY  block_item_list RCURLY;
 
+// eg: int i = 0; , int i = 0; int j = i;
 block_item_list	::= block_item
 				| block_item_list block_item;
 
 block_item	::= declaration
 			| statement;
 
+// eg: ; , x = 1;
 expression_statement	::= SEMICOLON
 						| expression SEMICOLON;
 
+// eg: if(x > 2) a = x; else a = y; , if(x > 2) a = x; , switch(x) a = x;
 selection_statement	::= IF LPAREN expression RPAREN statement ELSE statement
 					| IF LPAREN expression RPAREN statement
 					| SWITCH LPAREN expression RPAREN statement;
 
+// eg: while(x > 2) i++; , do i++; while(x > 2); , for(;;) i++; ,
+// for(;; i++) a = b + 2; , for(int i = 0; x > 2) i++; , for(int i = 0; x > 2; i++) x += a;
 iteration_statement	::= WHILE LPAREN expression RPAREN statement
 					| DO statement WHILE LPAREN expression RPAREN SEMICOLON
 					| FOR LPAREN expression_statement expression_statement RPAREN statement
@@ -550,6 +591,7 @@ iteration_statement	::= WHILE LPAREN expression RPAREN statement
 					| FOR LPAREN declaration expression_statement RPAREN statement
 					| FOR LPAREN declaration expression_statement expression RPAREN statement;
 
+// eg: goto start; , continue; , break; , return; , return x + 1;
 jump_statement	::= GOTO IDENTIFIER SEMICOLON
 				| CONTINUE SEMICOLON
 				| BREAK SEMICOLON
