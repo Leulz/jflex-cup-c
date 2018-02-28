@@ -9,3 +9,4 @@ grammar_dump
 parser.*
 sym.*
 Lexer.*
+inspiration/*
