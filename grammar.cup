@@ -205,159 +205,13 @@ external_declaration	::= function_definition
 function_definition	::= declaration_specifiers declarator declaration_list compound_statement
 					| declaration_specifiers declarator compound_statement;
 
-declaration_list	::= declaration
-					| declaration_list declaration;
-
-// eg: x , 12 , "oi" , (x >= 2) , _Generic(x = 1, int: x = 2)
-primary_expression	::= IDENTIFIER
-					| constant
-					| string
-					| LPAREN expression RPAREN
-					| generic_selection;
-
-// includes character_constant
-// eg: 1001 , 20.5 , MAX
-constant	::= I_CONSTANT
-			| F_CONSTANT
-			| ENUMERATION_CONSTANT;
-
-// before it has been defined as such
-// eg: ML
-enumeration_constant	::= IDENTIFIER;
-
-// eg: "oi" , __func__
-string	::= STRING_LITERAL
-		| FUNC_NAME;
-
-// eg: _Generic(x = 1, int: x = 2)
-generic_selection	::= GENERIC LPAREN assignment_expression COMMA generic_assoc_list RPAREN;
-
-// eg: int: x = 2 , int: x = 2, default: x = 0
-generic_assoc_list	::= generic_association
-					| generic_assoc_list COMMA generic_association;
-
-// eg: int: x = 2 , default: x = 2
-generic_association	::= type_name COLON assignment_expression
-					| DEFAULT COLON assignment_expression;
-
-// eg: x , x(20) , f() , f(a = 2, b = 3) , x.a , x->a , x++ , x-- , (Retangle){a = 2} , {Retangle}{a = 2,}
-postfix_expression	::= primary_expression
-					| postfix_expression LBRACKET expression RBRACKET
-					| postfix_expression LPAREN RPAREN
-					| postfix_expression LPAREN argument_expression_list RPAREN
-					| postfix_expression DOT IDENTIFIER
-					| postfix_expression PTR_OP IDENTIFIER
-					| postfix_expression INC_OP
-					| postfix_expression DEC_OP
-					| LPAREN type_name RPAREN LCURLY initializer_list RCURLY
-					| LPAREN type_name RPAREN LCURLY initializer_list COMMA RCURLY;
-
-// eg: x = a + 2 , x = 2, a = 0
-argument_expression_list	::= assignment_expression
-							| argument_expression_list COMMA assignment_expression;
-
-// eg: x , ++x , --x , *(int) x , sizeof x , sizeof(int) , _Alignof(int)
-unary_expression	::= postfix_expression
-					| INC_OP unary_expression
-					| DEC_OP unary_expression
-					| unary_operator cast_expression
-					| SIZEOF unary_expression
-					| SIZEOF LPAREN type_name RPAREN
-					| ALIGNOF LPAREN type_name RPAREN;
-
-// eg: & , * , + , - , ~ , !
-unary_operator	::= AND
-				| MUL
-				| ADD
-				| SUB
-				| COMPLEMENT
-				| NE;
-
-// eg: x , (int) x
-cast_expression	::= unary_expression
-				| LPAREN type_name RPAREN cast_expression;
-
-// eg: x , x * 2 , x / a , x % 5
-multiplicative_expression	::= cast_expression
-							| multiplicative_expression MUL cast_expression
-							| multiplicative_expression DIV cast_expression
-							| multiplicative_expression MOD cast_expression;
-
-// eg: x , x + 2 , x - 3
-additive_expression	::= multiplicative_expression
-					| additive_expression ADD multiplicative_expression
-					| additive_expression SUB multiplicative_expression;
-
-// eg: x , x << 2 , x >> a
-shift_expression	::= additive_expression
-					| shift_expression LEFT_OP additive_expression
-					| shift_expression RIGHT_OP additive_expression;
-
-// eg: x , x < 2 , x > a , x <= 12 , x >= b
-relational_expression	::= shift_expression
-						| relational_expression LE shift_expression
-						| relational_expression GE shift_expression
-						| relational_expression LE_OP shift_expression
-						| relational_expression GE_OP shift_expression;
-
-// eg: x , x == 0 , x != 12
-equality_expression	::= relational_expression
-					| equality_expression EQ_OP relational_expression
-					| equality_expression NE_OP relational_expression;
-
-// eg: x , x & y
-and_expression	::= equality_expression
-				| and_expression AND equality_expression;
-
-// eg: x , x ^ y
-exclusive_or_expression	::= and_expression
-						| exclusive_or_expression XOR and_expression;
-
-// eg: x , x | y
-inclusive_or_expression	::= exclusive_or_expression
-						| inclusive_or_expression OR exclusive_or_expression;
-
-// eg: x , x && a
-logical_and_expression	::= inclusive_or_expression
-						| logical_and_expression AND_OP inclusive_or_expression;
-
-// eg: x , x || a
-logical_or_expression	::= logical_and_expression
-						| logical_or_expression OR_OP logical_and_expression;
-
-// eg: x , x > 2 ? 12 : x + 12
-conditional_expression	::= logical_or_expression
-						| logical_or_expression QUESTION expression COLON conditional_expression;
-
-// eg: x , x++ = a + b
-assignment_expression	::= conditional_expression
-						| unary_expression assignment_operator assignment_expression;
-
-// eg: = , *= , /= , %= , += , -= , <<= , >>= , &= , ^= , |=
-assignment_operator	::= ASSIGN
-					| MUL_ASSIGN
-					| DIV_ASSIGN
-					| MOD_ASSIGN
-					| ADD_ASSIGN
-					| SUB_ASSIGN
-					| LEFT_ASSIGN
-					| RIGHT_ASSIGN
-					| AND_ASSIGN
-					| XOR_ASSIGN
-					| OR_ASSIGN;
-
-// eg: x , x, a = 2
-expression	::= assignment_expression
-			| expression COMMA assignment_expression;
-
-// with constraints
-// eg: x
-constant_expression	::= conditional_expression;
-
+// eg: static int; , static  , _Static_assert(x, "oi");
 declaration	::= declaration_specifiers SEMICOLON
 			| declaration_specifiers:t init_declarator_list:v SEMICOLON {: semanticAnalyser.commitDeclaredVariables((Type) t); :}
 			| static_assert_declaration;
 
+// eg: typedef static , static , int static , int , const static , const , 
+// inline const , inline , _Alignas() static , _Alignas()
 declaration_specifiers	::= storage_class_specifier declaration_specifiers:t {: RESULT = t; :}
 						| storage_class_specifier
 						| type_specifier declaration_specifiers
@@ -369,13 +223,26 @@ declaration_specifiers	::= storage_class_specifier declaration_specifiers:t {: R
 						| alignment_specifier declaration_specifiers
 						| alignment_specifier;
 
+// eg: *x, x
+declarator	::= pointer direct_declarator
+			| direct_declarator:v {: RESULT=v; :};
+
+declaration_list	::= declaration
+					| declaration_list declaration;
+
+// eg: {} , { int i = 0; }
+compound_statement	::= LCURLY RCURLY
+					| LCURLY  block_item_list RCURLY;
+
+// eg:
 init_declarator_list	::= init_declarator:v {: RESULT=v; :}
 						| init_declarator_list COMMA init_declarator;
 
-init_declarator	::= declarator ASSIGN initializer
-				| declarator:v {: RESULT=v; :};
+// eg: _Static_assert(x, "oi");
+static_assert_declaration	::= STATIC_ASSERT LPAREN constant_expression COMMA STRING_LITERAL RPAREN SEMICOLON;
 
 // identifiers must be flagged as TYPEDEF_NAME
+// eg: typedef , extern , static , _Thread_local , auto , register
 storage_class_specifier ::= TYPEDEF
 						| EXTERN
 						| STATIC
@@ -384,7 +251,7 @@ storage_class_specifier ::= TYPEDEF
 						| REGISTER;
 
 // eg: void , char , short , int , long , float , double , signed , unsigned ,
-// bool , _Complex , _Imaginary
+// bool , _Complex , _Imaginary , _Atomic(int) , enum{ML, MN} , Retangle
 type_specifier	::= VOID
 				| CHAR
 				| SHORT
@@ -402,67 +269,28 @@ type_specifier	::= VOID
 				| enum_specifier
 				| TYPEDEF_NAME;
 
-struct_or_union_specifier	::= struct_or_union LCURLY struct_declaration_list RCURLY
-							| struct_or_union IDENTIFIER LCURLY struct_declaration_list RCURLY
-							| struct_or_union IDENTIFIER;
-
-// eg: struct , union
-struct_or_union ::= STRUCT
-				| UNION;
-
-struct_declaration_list	::= struct_declaration
-						| struct_declaration_list struct_declaration;
-
-// for anonymous struct/union
-struct_declaration	::= specifier_qualifier_list SEMICOLON
-					| specifier_qualifier_list struct_declarator_list SEMICOLON
-					| static_assert_declaration;
-
-specifier_qualifier_list	::= type_specifier specifier_qualifier_list
-							| type_specifier
-							| type_qualifier specifier_qualifier_list
-							| type_qualifier;
-
-struct_declarator_list	::= struct_declarator
-						| struct_declarator_list COMMA struct_declarator;
-
-struct_declarator	::= COLON constant_expression
-					| declarator COLON constant_expression
-					| declarator;
-
-enum_specifier	::= ENUM LCURLY enumerator_list RCURLY
-				| ENUM LCURLY enumerator_list COMMA RCURLY
-				| ENUM IDENTIFIER LCURLY enumerator_list RCURLY
-				| ENUM IDENTIFIER LCURLY enumerator_list COMMA RCURLY
-				| ENUM IDENTIFIER;
-
-enumerator_list	::= enumerator
-				| enumerator_list COMMA enumerator;
-
-// identifiers must be flagged as ENUMERATION_CONSTANT
-enumerator	::= enumeration_constant ASSIGN constant_expression
-			| enumeration_constant;
-
-// eg: _Atomic (int)
-atomic_type_specifier	::= ATOMIC LPAREN type_name RPAREN;
-
-// eg: const | restrict | volatile | _Atomic
+// eg: const , restrict , volatile , _Atomic
 type_qualifier	::= CONST
 				| RESTRICT
 				| VOLATILE
 				| ATOMIC;
 
-// eg: inline | _Noreturn
+// eg: inline , _Noreturn
 function_specifier	::= INLINE
 					| NORETURN;
 
-// eg: _Alignas (int) | _Alignas ()
+// eg: _Alignas(int) , _Alignas()
 alignment_specifier	::= ALIGNAS LPAREN type_name RPAREN
 					| ALIGNAS LPAREN constant_expression RPAREN;
 
-declarator	::= pointer direct_declarator
-			| direct_declarator:v {: RESULT=v; :};
+// eg: *const, volatile* , *const, volatile , ** , * 
+pointer	::= MUL type_qualifier_list pointer
+		| MUL type_qualifier_list
+		| MUL pointer
+		| MUL;
 
+// eg: x , (x) , x[] , x[*] , x[static int i = 0] , x[static i = 0] , x[int*] , 
+// x[int static i = 0] , x[int i = 0] , x[int] , x[i = 0], x(int, int) , x(), x(a, b, c)
 direct_declarator	::= IDENTIFIER:id {: System.out.println("Saw an identifier in a declaration.");
                                       Variable v = new Variable((String) id, new Type("null"));
                                       semanticAnalyser.addScopedVar(v);
@@ -481,35 +309,148 @@ direct_declarator	::= IDENTIFIER:id {: System.out.println("Saw an identifier in 
 					| direct_declarator LPAREN RPAREN
 					| direct_declarator LPAREN identifier_list RPAREN;
 
-pointer	::= MUL type_qualifier_list pointer
-		| MUL type_qualifier_list
-		| MUL pointer
-		| MUL;
+// eg: int i = 0; , int i = 0; int j = i;
+block_item_list	::= block_item
+				| block_item_list block_item;
 
+// eg: *x = , *x
+init_declarator	::= declarator ASSIGN initializer
+				| declarator:v {: RESULT=v; :};
+
+// with constraints
+// eg: x
+constant_expression	::= conditional_expression;
+
+// eg: _Atomic(int)
+atomic_type_specifier	::= ATOMIC LPAREN type_name RPAREN;
+
+struct_or_union_specifier	::= struct_or_union LCURLY struct_declaration_list RCURLY
+							| struct_or_union IDENTIFIER LCURLY struct_declaration_list RCURLY
+							| struct_or_union IDENTIFIER;
+
+// eg: enum{ML, MN} , enum{ML, MN,} , enum data{ML, MN} , enum data{ML, MN,} , enum data
+enum_specifier	::= ENUM LCURLY enumerator_list RCURLY
+				| ENUM LCURLY enumerator_list COMMA RCURLY
+				| ENUM IDENTIFIER LCURLY enumerator_list RCURLY
+				| ENUM IDENTIFIER LCURLY enumerator_list COMMA RCURLY
+				| ENUM IDENTIFIER;
+
+type_name	::= specifier_qualifier_list abstract_declarator
+			| specifier_qualifier_list;
+
+// eg: const , volatile const
 type_qualifier_list	::= type_qualifier
 					| type_qualifier_list type_qualifier;
 
+// eg: x , x++ = a + b
+assignment_expression	::= conditional_expression
+						| unary_expression assignment_operator assignment_expression;
+
+// eg: int x, int y, ... , int x
 parameter_type_list	::= parameter_list COMMA ELLIPSIS
 					| parameter_list;
-
-parameter_list	::= parameter_declaration
-				| parameter_list COMMA parameter_declaration;
-
-parameter_declaration	::= declaration_specifiers declarator
-						| declaration_specifiers abstract_declarator
-						| declaration_specifiers;
 
 // eg: x , x, a, b
 identifier_list	::= IDENTIFIER
 				| identifier_list COMMA IDENTIFIER;
 
-type_name	::= specifier_qualifier_list abstract_declarator
-			| specifier_qualifier_list;
+block_item	::= declaration
+			| statement;
 
+// eg: {[i][j] = 12} , {[i][j] = 12,} , {x} , {x,} , x , 12
+initializer	::= LCURLY initializer_list RCURLY
+			| LCURLY initializer_list COMMA RCURLY
+			| assignment_expression;
+
+// eg: x , x > 2 ? 12 : x + 12
+conditional_expression	::= logical_or_expression
+						| logical_or_expression QUESTION expression COLON conditional_expression;
+
+// eg: struct , union
+struct_or_union ::= STRUCT
+				| UNION;
+
+// eg: char; , char; char;
+struct_declaration_list	::= struct_declaration
+						| struct_declaration_list struct_declaration;
+
+// eg: ML, ML, MN
+enumerator_list	::= enumerator
+				| enumerator_list COMMA enumerator;
+
+// eg: char int , char , const char , const
+specifier_qualifier_list	::= type_specifier specifier_qualifier_list
+							| type_specifier
+							| type_qualifier specifier_qualifier_list
+							| type_qualifier;
+
+// eg: *[] , * , []
 abstract_declarator	::= pointer direct_abstract_declarator
 					| pointer
 					| direct_abstract_declarator;
 
+// eg: x , ++x , --x , *(int) x , sizeof x , sizeof(int) , _Alignof(int)
+unary_expression	::= postfix_expression
+					| INC_OP unary_expression
+					| DEC_OP unary_expression
+					| unary_operator cast_expression
+					| SIZEOF unary_expression
+					| SIZEOF LPAREN type_name RPAREN
+					| ALIGNOF LPAREN type_name RPAREN;
+
+// eg: = , *= , /= , %= , += , -= , <<= , >>= , &= , ^= , |=
+assignment_operator	::= ASSIGN
+					| MUL_ASSIGN
+					| DIV_ASSIGN
+					| MOD_ASSIGN
+					| ADD_ASSIGN
+					| SUB_ASSIGN
+					| LEFT_ASSIGN
+					| RIGHT_ASSIGN
+					| AND_ASSIGN
+					| XOR_ASSIGN
+					| OR_ASSIGN;
+
+// eg: int x , int x, int y
+parameter_list	::= parameter_declaration
+				| parameter_list COMMA parameter_declaration;
+
+statement	::= labeled_statement
+			| compound_statement
+			| expression_statement
+			| selection_statement
+			| iteration_statement
+			| jump_statement;
+
+// eg: [i][j] = 12 , x , 12 , x, [i][j] = 12 , x, y
+initializer_list	::= designation initializer
+					| initializer
+					| initializer_list COMMA designation initializer
+					| initializer_list COMMA initializer;
+
+// eg: x , x || a
+logical_or_expression	::= logical_and_expression
+						| logical_or_expression OR_OP logical_and_expression;
+
+// eg: x , x, a = 2
+expression	::= assignment_expression
+			| expression COMMA assignment_expression;
+
+// for anonymous struct/union
+// eg: char; , char int; , 
+struct_declaration	::= specifier_qualifier_list SEMICOLON
+					| specifier_qualifier_list struct_declarator_list SEMICOLON
+					| static_assert_declaration;
+
+// identifiers must be flagged as ENUMERATION_CONSTANT
+// eg: ML = x, ML
+enumerator	::= enumeration_constant ASSIGN constant_expression
+			| enumeration_constant;
+
+// eg: (*) , [] , [*] , [static const i = 0] , [static i = 0], [const static i = 0] ,
+// [const] , [i = 0] , [][] , [][*] , [][static const i = 0], [][static i = 0], 
+// [][const i = 0] , [][const static i = 0], [][const], [][i = 0] , (), (int x, int y) ,
+// []() , [](int x, int y)
 direct_abstract_declarator	::= LPAREN abstract_declarator RPAREN
 							| LBRACKET RBRACKET
 							| LBRACKET MUL RBRACKET
@@ -532,46 +473,38 @@ direct_abstract_declarator	::= LPAREN abstract_declarator RPAREN
 							| direct_abstract_declarator LPAREN RPAREN
 							| direct_abstract_declarator LPAREN parameter_type_list RPAREN;
 
-initializer	::= LCURLY initializer_list RCURLY
-			| LCURLY initializer_list COMMA RCURLY
-			| assignment_expression;
+// eg: x , x(20) , f() , f(a = 2, b = 3) , x.a , x->a , x++ , x-- , (Retangle){a = 2} , {Retangle}{a = 2,}
+postfix_expression	::= primary_expression
+					| postfix_expression LBRACKET expression RBRACKET
+					| postfix_expression LPAREN RPAREN
+					| postfix_expression LPAREN argument_expression_list RPAREN
+					| postfix_expression DOT IDENTIFIER
+					| postfix_expression PTR_OP IDENTIFIER
+					| postfix_expression INC_OP
+					| postfix_expression DEC_OP
+					| LPAREN type_name RPAREN LCURLY initializer_list RCURLY
+					| LPAREN type_name RPAREN LCURLY initializer_list COMMA RCURLY;
 
-initializer_list	::= designation initializer
-					| initializer
-					| initializer_list COMMA designation initializer
-					| initializer_list COMMA initializer;
+// eg: & , * , + , - , ~ , !
+unary_operator	::= AND
+				| MUL
+				| ADD
+				| SUB
+				| COMPLEMENT
+				| NE;
 
-designation	::= designator_list ASSIGN;
+// eg: x , (int) x
+cast_expression	::= unary_expression
+				| LPAREN type_name RPAREN cast_expression;
 
-designator_list	::= designator
-				| designator_list designator;
-
-designator	::= LBRACKET constant_expression RBRACKET
-			| DOT IDENTIFIER;
-
-static_assert_declaration	::= STATIC_ASSERT LPAREN constant_expression COMMA STRING_LITERAL RPAREN SEMICOLON;
-
-statement	::= labeled_statement
-			| compound_statement
-			| expression_statement
-			| selection_statement
-			| iteration_statement
-			| jump_statement;
+// eg: int x , int* , int
+parameter_declaration	::= declaration_specifiers declarator
+						| declaration_specifiers abstract_declarator
+						| declaration_specifiers;
 
 labeled_statement	::= IDENTIFIER COLON statement
 					| CASE constant_expression COLON statement
 					| DEFAULT COLON statement;
-
-// eg: {} , { int i = 0; }
-compound_statement	::= LCURLY RCURLY
-					| LCURLY  block_item_list RCURLY;
-
-// eg: int i = 0; , int i = 0; int j = i;
-block_item_list	::= block_item
-				| block_item_list block_item;
-
-block_item	::= declaration
-			| statement;
 
 // eg: ; , x = 1;
 expression_statement	::= SEMICOLON
@@ -597,3 +530,110 @@ jump_statement	::= GOTO IDENTIFIER SEMICOLON
 				| BREAK SEMICOLON
 				| RETURN SEMICOLON
 				| RETURN expression SEMICOLON;
+
+// Assignment of a designator chain like in matrix[i][j] = 2
+// eg: [i][j] = , [x].a = , .left.left =
+designation	::= designator_list ASSIGN;
+
+// eg: x , x && a
+logical_and_expression	::= inclusive_or_expression
+						| logical_and_expression AND_OP inclusive_or_expression;
+
+// eg: :x , :x, :a
+struct_declarator_list	::= struct_declarator
+						| struct_declarator_list COMMA struct_declarator;
+
+// Stands for the constants defined in enums before it has been defined as such
+// eg: ML
+enumeration_constant	::= IDENTIFIER;
+
+// #1 priority precedence on a expression, calculates values, understand variables, and enter parathesis
+// expressions to evaluate it.
+// eg: x , 12 , "oi" , (x >= 2) , _Generic(x = 1, int: x = 2)
+primary_expression	::= IDENTIFIER
+					| constant
+					| string
+					| LPAREN expression RPAREN
+					| generic_selection;
+
+// eg: x = a + 2 , x = 2, a = 0
+argument_expression_list	::= assignment_expression
+							| argument_expression_list COMMA assignment_expression;
+
+// A chain of designations like in matrix[i][j], or tree.left.left
+// eg: [i] , [i][j] , .left.left
+designator_list	::= designator
+				| designator_list designator;
+
+// eg: x , x | y
+inclusive_or_expression	::= exclusive_or_expression
+						| inclusive_or_expression OR exclusive_or_expression;
+
+// eg: :x , *x:a , *x
+struct_declarator	::= COLON constant_expression
+					| declarator COLON constant_expression
+					| declarator;
+
+// It represents a specific number of value. Includes character_constant
+// eg: 1001 , 20.5 , MAX
+constant	::= I_CONSTANT
+			| F_CONSTANT
+			| ENUMERATION_CONSTANT;
+
+// It represents a specifi text
+// eg: "oi" , __func__
+string	::= STRING_LITERAL
+		| FUNC_NAME;
+
+// eg: _Generic(x = 1, int: x = 2)
+generic_selection	::= GENERIC LPAREN assignment_expression COMMA generic_assoc_list RPAREN;
+
+// It specifies an adress related to the Identifier, like in
+// ball[12] or ball.radius.
+// eg: [i] , [12] , .radius
+designator	::= LBRACKET constant_expression RBRACKET
+			| DOT IDENTIFIER;
+
+// eg: x , x ^ y
+exclusive_or_expression	::= and_expression
+						| exclusive_or_expression XOR and_expression;
+
+// eg: int: x = 2 , int: x = 2, default: x = 0
+generic_assoc_list	::= generic_association
+					| generic_assoc_list COMMA generic_association;
+
+// eg: x , x & y
+and_expression	::= equality_expression
+				| and_expression AND equality_expression;
+
+// eg: int: x = 2 , default: x = 2
+generic_association	::= type_name COLON assignment_expression
+					| DEFAULT COLON assignment_expression;
+
+// eg: x , x == 0 , x != 12
+equality_expression	::= relational_expression
+					| equality_expression EQ_OP relational_expression
+					| equality_expression NE_OP relational_expression;
+
+// eg: x , x < 2 , x > a , x <= 12 , x >= b
+relational_expression	::= shift_expression
+						| relational_expression LE shift_expression
+						| relational_expression GE shift_expression
+						| relational_expression LE_OP shift_expression
+						| relational_expression GE_OP shift_expression;
+
+// eg: x , x << 2 , x >> a
+shift_expression	::= additive_expression
+					| shift_expression LEFT_OP additive_expression
+					| shift_expression RIGHT_OP additive_expression;
+
+// eg: x , x + 2 , x - 3
+additive_expression	::= multiplicative_expression
+					| additive_expression ADD multiplicative_expression
+					| additive_expression SUB multiplicative_expression;
+
+// eg: x , x * 2 , x / a , x % 5
+multiplicative_expression	::= cast_expression
+							| multiplicative_expression MUL cast_expression
+							| multiplicative_expression DIV cast_expression
+							| multiplicative_expression MOD cast_expression;
