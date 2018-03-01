@@ -345,7 +345,10 @@ type_name	::= specifier_qualifier_list abstract_declarator
 type_qualifier_list	::= type_qualifier
 					| type_qualifier_list type_qualifier;
 
-// eg: x , x++ = a + b
+// Here we defined the 14º precedence on operators in C, the assignment operators, 
+// which can be used to assign values (expressions) to variables. The unary operators
+// are the only ones allowed to operate on the variables receiving values.
+// eg: x , a + b , i++ , x++ = a + b , a += m , i *= 2
 assignment_expression	::= conditional_expression
 						| unary_expression assignment_operator assignment_expression;
 
@@ -365,7 +368,10 @@ initializer	::= LCURLY initializer_list RCURLY
 			| LCURLY initializer_list COMMA RCURLY
 			| assignment_expression;
 
-// eg: x , x > 2 ? 12 : x + 12
+// Here we defined the 13º precedence on operators in C, the ternary conditional "?:",
+// which allows to create a mini if-then-else calculation. Note the restriction on the values to
+// be evaluated as bool or not, and the else value.
+// eg: x , a + b , i++ , x > 2 ? 12 : x + 12 , condition ? i += 2 : condition2 ? j += 2 : 0
 conditional_expression	::= logical_or_expression
 						| logical_or_expression QUESTION expression COLON conditional_expression;
 
@@ -431,11 +437,16 @@ initializer_list	::= designation initializer
 					| initializer_list COMMA designation initializer
 					| initializer_list COMMA initializer;
 
+// Here we defined the 12º precedence on operators in C, the logical or "||".
+// It's used to evaluate bool values on the conditions in C.
 // eg: x , x || a
 logical_or_expression	::= logical_and_expression
 						| logical_or_expression OR_OP logical_and_expression;
 
-// eg: x , x, a = 2
+// Its anything that can be evaluated to a value of any type available or defined.
+// Here, we define the lowest precedence (15º) of the operators on C, the "," that
+// tie expressions to be passed as functions parameters or declarations.
+// eg: x , a = 2 , a + b , a + (-b) , x, a = 2
 expression	::= assignment_expression
 			| expression COMMA assignment_expression;
 
@@ -538,6 +549,8 @@ jump_statement	::= GOTO IDENTIFIER SEMICOLON
 // eg: [i][j] = , [x].a = , .left.left =
 designation	::= designator_list ASSIGN;
 
+// Here we defined the 11º precedence on operators in C, the logical and "&&".
+// It's used to evaluate bool values on the conditions in C.
 // eg: x , x && a
 logical_and_expression	::= inclusive_or_expression
 						| logical_and_expression AND_OP inclusive_or_expression;
@@ -546,13 +559,14 @@ logical_and_expression	::= inclusive_or_expression
 struct_declarator_list	::= struct_declarator
 						| struct_declarator_list COMMA struct_declarator;
 
-// Stands for the constants defined in enums before it has been defined as such
-// eg: ML
+// Stands for the constants defined in enums BEFORE it has been defined as such.
+// eg: ML , MAX_INT , MIN , STEP
 enumeration_constant	::= IDENTIFIER;
 
-// #1 priority precedence on a expression, calculates values, understand variables, and enter parathesis
-// expressions to evaluate it.
-// eg: x , 12 , "oi" , (x >= 2) , _Generic(x = 1, int: x = 2)
+// The foremost basic element of an expression, comprehends identifiers,
+// numbers constants, strings, expression on parenthesis and generics selections.
+// eg: x , a , b , 11 , 12.2 , 0xA2 , "oi" , "tchau" , "Hi, Leo!" , 
+// (x >= 2) , (a == (i = j + i + 1)) , _Generic(x = 1, int: x = 2)
 primary_expression	::= IDENTIFIER
 					| constant
 					| string
