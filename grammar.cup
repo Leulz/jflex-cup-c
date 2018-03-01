@@ -195,6 +195,7 @@ non terminal static_assert_declaration, statement, labeled_statement, compound_s
 non terminal block_item, expression_statement, selection_statement, iteration_statement, jump_statement;
 
 precedence nonassoc ELSE;
+precedence nonassoc ATOMIC;
 
 start with translation_unit;
 
