@@ -201,6 +201,7 @@ start with translation_unit;
 
 // The source file with #includes, #defines and all external declarations.
 // eg: #include<stdio.h> int main() {printf("Hello, World!");}
+// TODO
 translation_unit	::= external_declaration
 					| translation_unit external_declaration;
 
@@ -210,6 +211,7 @@ translation_unit	::= external_declaration
 // they appear outside of any function.
 // eg: int g = 32; , int main() {printf("Hello, World!");} , 
 // int i = 40; int main() {printf("%d", i);}
+// TODO
 external_declaration	::= function_definition
 						| declaration;
 
@@ -217,6 +219,7 @@ external_declaration	::= function_definition
 // statements) with the function name and parameter list. Unlike function declaration, 
 // function definitions are allowed at file scope only (there are no nested functions).
 // eg: int f(int a, int b) {return a + b;} , int f(a, b) int a, b; {return a + b;}
+// TODO
 function_definition	::= declaration_specifiers declarator declaration_list compound_statement
 					| declaration_specifiers declarator compound_statement;
 
@@ -225,6 +228,7 @@ function_definition	::= declaration_specifiers declarator declaration_list compo
 // and union declarations may omit declarators. Can be a static-assert declaration.
 // eg: enum COLOR {RED, GREEN, BLUE}; , const int *f(void); , int a, *b=NULL; ,
 // _Static_assert(2 + 2 == 4, "Whoa dude!");
+// TODO
 declaration	::= declaration_specifiers SEMICOLON
 			| declaration_specifiers:t init_declarator_list:v SEMICOLON {: semanticAnalyser.commitDeclaredVariables((Type) t); :}
 			| static_assert_declaration;
@@ -236,6 +240,7 @@ declaration	::= declaration_specifiers SEMICOLON
 // zero or more alignment specifiers: alignas.
 // eg: typedef static , static , int static , int , const static , const , 
 // inline const , inline , _Alignas() static , _Alignas()
+// TODO
 declaration_specifiers	::= storage_class_specifier declaration_specifiers:t {: RESULT = t; :}
 						| storage_class_specifier
 						| type_specifier declaration_specifiers
@@ -251,16 +256,19 @@ declaration_specifiers	::= storage_class_specifier declaration_specifiers:t {: R
 // pointer declaration: the declaration S * cvr D; declares D as a 
 // cvr-qualified pointer to the type determined by S.
 // eg: a , *b , *f(void) , *f(int i, int a)
+// TODO
 declarator	::= pointer direct_declarator
 			| direct_declarator:v {: RESULT=v; :};
 
 // Set of declarations in sequence.
 // eg: int i = 0; int j = 1 , char c;
+// TODO
 declaration_list	::= declaration
 					| declaration_list declaration;
 
 // A compound statement, or block, is a brace-enclosed sequence of statements and declarations.
 // eg: {} , { int i = 0; } , {int i = 0; printf(i++); printf(i++);}
+// TODO
 compound_statement	::= LCURLY RCURLY
 					| LCURLY  block_item_list RCURLY;
 
@@ -268,26 +276,16 @@ compound_statement	::= LCURLY RCURLY
 // Comma-separated list of declarators (each declarator provides additional 
 // type information and/or the identifier to declare).
 // eg: c = 3, i = 2 , *x = &i, *y = &j , a = 1
+// TODO
 init_declarator_list	::= init_declarator:v {: RESULT=v; :}
 						| init_declarator_list COMMA init_declarator;
-
-// Storage-class specifiers appear in declarations. At most one specifier may be 
-// used, except that _Thread_local may be combined with static or extern to adjust
-// linkage. The storage-class specifiers determine two independent properties of 
-// the names they declare: storage duration and linkage.
-// eg: typedef , extern , static , _Thread_local , auto , register
-storage_class_specifier ::= TYPEDEF
-						| EXTERN
-						| STATIC
-						| THREAD_LOCAL
-						| AUTO
-						| REGISTER;
 
 // All keywords or expressions that represents the type of a value: can be void, an
 // an arithmetic type, an atomic type, a name earlier introduced by a typedef declaration,
 // struct, union, or enum specifier.
 // eg: void , char , short , int , long , float , double , signed , unsigned ,
 // bool , _Complex , _Imaginary , _Atomic(int) , enum{ML, MN} , Retangle
+// TODO
 type_specifier	::= VOID
 				| CHAR
 				| SHORT
@@ -304,6 +302,398 @@ type_specifier	::= VOID
 				| struct_or_union_specifier
 				| enum_specifier
 				| TYPEDEF_NAME;
+
+// Provide type information and/or identifier to declare. Can be the identifier
+// that this declarator introduces; any declarator may be enclosed in parentheses;
+// can be an array declarator: the declaration S D[N] declares D as an array of N 
+// objects of the type determined by S; can be function declarator: the 
+// declaration S D(params) declared D as a function taking the parameters params 
+// and returning S.
+// eg: x , (x) , (*obj), m[] , m[*] , m[20] , x[i = 0], x(int, int) , x(), 
+// x(a, b, c)
+// TODO
+direct_declarator	::= IDENTIFIER:id {: System.out.println("Saw an identifier in a declaration.");
+                                      Variable v = new Variable((String) id, new Type("null"));
+                                      semanticAnalyser.addScopedVar(v);
+                                      RESULT = v; :}
+					| LPAREN declarator RPAREN
+					| direct_declarator LBRACKET RBRACKET
+					| direct_declarator LBRACKET MUL RBRACKET
+					| direct_declarator LBRACKET STATIC type_qualifier_list assignment_expression RBRACKET
+					| direct_declarator LBRACKET STATIC assignment_expression RBRACKET
+					| direct_declarator LBRACKET type_qualifier_list MUL RBRACKET
+					| direct_declarator LBRACKET type_qualifier_list STATIC assignment_expression RBRACKET
+					| direct_declarator LBRACKET type_qualifier_list assignment_expression RBRACKET
+					| direct_declarator LBRACKET type_qualifier_list RBRACKET
+					| direct_declarator LBRACKET assignment_expression RBRACKET
+					| direct_declarator LPAREN parameter_type_list RPAREN
+					| direct_declarator LPAREN RPAREN
+					| direct_declarator LPAREN identifier_list RPAREN;
+
+// Set of declarations and statements at sequence.
+// eg: int i = 0; , int i = 0; printf(i++); printf(i++);
+// TODO
+block_item_list	::= block_item
+				| block_item_list block_item;
+
+// Declarators may be accompanied by initializers. The enum, struct, and union 
+// declarations may omit declarators, in which case they only introduce 
+// the enumeration constants and/or tags.
+// eg: *x = &a, c = 3 , c , *f(void) = &calc
+// TODO
+init_declarator	::= declarator ASSIGN initializer
+				| declarator:v {: RESULT=v; :};
+
+// Constant values of certain types may be embedded in the source code of a 
+// C program using specialized expressions known as literals (for lvalue
+// expressions) and constants (for non-lvalue expressions).
+// eg: 12, 14, 3.14
+// TODO
+constant_expression	::= conditional_expression;
+
+// Here we defined the 14º precedence on operators in C, the assignment and 
+// compound assignment operators that are binary operators that modify the 
+// variable to their left using the value to their right.
+// eg: x , a + b , i++ , x++ = a + b , a += m , i *= 2
+// TODO
+assignment_expression	::= conditional_expression
+						| unary_expression assignment_operator assignment_expression;
+
+// Either the single keyword void or a comma-separated list of parameters, 
+// which may end with an ellipsis parameter.
+// eg: int x, int y, ... , int x
+// TODO
+parameter_type_list	::= parameter_list COMMA ELLIPSIS
+					| parameter_list;
+
+// Block item, it's a declaration or a statement.
+// eg: int i = 0; , f(1, 3); , printf("Oi");
+// TODO
+block_item	::= declaration
+			| statement;
+
+// A declaration of an object may provide its initial value through the 
+// process known as initialization. For each declarator, the initializer, 
+// if not omitted, may be a expression, or a initializer-list.
+// eg: {[0].a = {1}, [1].a[0] = 2} , {1, 2, 3,} , x + a , 12.2 , "oi"
+// TODO
+initializer	::= LCURLY initializer_list RCURLY
+			| LCURLY initializer_list COMMA RCURLY
+			| assignment_expression;
+
+// Here we defined the 13º precedence on operators in C, the ternary conditional "?:",
+// which allows to create a mini if-then-else calculation. Note the restriction on the values to
+// be evaluated as bool or not, and the else value.
+// eg: x , a + b , i++ , x > 2 ? 12 : x + 12 , condition ? i += 2 : condition2 ? j += 2 : 0
+// TODO
+conditional_expression	::= logical_or_expression
+						| logical_or_expression QUESTION expression COLON conditional_expression;
+
+// Here we defined the rest of the operators at 2º precedence in C, unary
+// operators like "i++" or "!(x >= 2)", they only are applied when put 
+// right before the expression, "prefixed" to the expression to change. 
+// It's used to execute various operations in C, but it affects only one 
+// expression at a time.
+// eg: x , s[i] , ++x , --x , -b , *b , ~2 , !(a || b) , *(int) x , 
+// sizeof x , sizeof(int) , _Alignof(int)
+// TODO
+unary_expression	::= postfix_expression
+					| INC_OP unary_expression
+					| DEC_OP unary_expression
+					| unary_operator cast_expression
+					| SIZEOF unary_expression
+					| SIZEOF LPAREN type_name RPAREN
+					| ALIGNOF LPAREN type_name RPAREN;
+
+// All assignment operators on C. Besides the assignment function
+// some executes different operations related to the value that
+// existed before the assignment.
+// eg: = , *= , /= , %= , += , -= , <<= , >>= , &= , ^= , |=
+// TODO
+assignment_operator	::= ASSIGN
+					| MUL_ASSIGN
+					| DIV_ASSIGN
+					| MOD_ASSIGN
+					| ADD_ASSIGN
+					| SUB_ASSIGN
+					| LEFT_ASSIGN
+					| RIGHT_ASSIGN
+					| AND_ASSIGN
+					| XOR_ASSIGN
+					| OR_ASSIGN;
+
+// Comma-separated list of parameters.
+// eg: int x , int x, int y , int, char
+// TODO
+parameter_list	::= parameter_declaration
+				| parameter_list COMMA parameter_declaration;
+
+// Statements are fragments of the C program that are executed in sequence. 
+// The body of any function is a compound statement, which, in turn is a 
+// sequence of statements and declarations.
+// eg: i = 2*b; , if(i > 0) i = -1;
+// TODO
+statement	::= labeled_statement
+			| compound_statement
+			| expression_statement
+			| selection_statement
+			| iteration_statement
+			| jump_statement;
+
+// A initializer-list is a non-empty comma-separated list of initializers (with 
+// an optional trailing comma), where each initializer has one of three 
+// possible forms: expression, {initializer_list} or designator_list = expression.
+// eg: [0].a = {1} , x , 12 , [0].a = {1}, [1].a[0] = 2 , 1, 2, 3
+// TODO
+initializer_list	::= designation initializer
+					| initializer
+					| initializer_list COMMA designation initializer
+					| initializer_list COMMA initializer;
+
+// Here we defined the 12º precedence on operators in C, the logical or "||".
+// It's used to evaluate bool values on the conditions in C.
+// eg: x , a + b , x || a , a || b || c , a || b && c
+// TODO
+logical_or_expression	::= logical_and_expression
+						| logical_or_expression OR_OP logical_and_expression;
+
+// An expression is a sequence of operators and their operands, that specifies a
+// computation. Expression evaluation may produce a result (e.g., evaluation of
+// 2+2 produces the result 4), may generate side-effects (e.g. evaluation of 
+// printf("%d",4) sends the character '4' to the standard output stream), and 
+// may designate objects or functions.
+// eg: x , a = 2 , a + b , a + (-b) , x, a = 2
+// TODO
+expression	::= assignment_expression
+			| expression COMMA assignment_expression;
+
+// Here we defined the operators at 1º precedence in C, postfix operators 
+// like "a[i]" or "calc()", they only are applied when put right after the 
+// expression, "postfixed" to the expression to change.
+// It's used to execute plenty things in C, affecting only one expression
+// at a time. They are related to value addressing, and function execution, 
+// hence the high priority.
+// eg: x , x(20) , f() , f(a = 2, b = 3) , x.a , x->a , x++ , x-- , 
+// (Retangle){a = 2} , {Retangle}{a = 2,}
+// TODO
+postfix_expression	::= primary_expression
+					| postfix_expression LBRACKET expression RBRACKET
+					| postfix_expression LPAREN RPAREN
+					| postfix_expression LPAREN argument_expression_list RPAREN
+					| postfix_expression DOT IDENTIFIER
+					| postfix_expression PTR_OP IDENTIFIER
+					| postfix_expression INC_OP
+					| postfix_expression DEC_OP
+					| LPAREN type_name RPAREN LCURLY initializer_list RCURLY
+					| LPAREN type_name RPAREN LCURLY initializer_list COMMA RCURLY;
+
+// All of prefixed unary operators on C. Perform various operations
+// at number, logical or bitwise scope.
+// eg: & , * , + , - , ~ , !
+// TODO
+unary_operator	::= AND
+				| MUL
+				| ADD
+				| SUB
+				| COMPLEMENT
+				| NE;
+
+// Here we defined one of the operators at 2º precedence in C, the cast
+// operation like "(int) x" or "(float) 2 / 12". It's used to transform 
+// values to different types in C.
+// eg: x , a[i++] , (int) x , (float) 2 , (float) ++i
+// TODO
+cast_expression	::= unary_expression
+				| LPAREN type_name RPAREN cast_expression;
+
+// A specific declaration, related to parameters on functions.
+// eg: int x , int* , int[][] , int
+// TODO
+parameter_declaration	::= declaration_specifiers declarator
+						| declaration_specifiers abstract_declarator
+						| declaration_specifiers;
+
+// Any statement can be labeled, by providing a name followed by a colon 
+// before the statement itself. It can be: target for a goto; case label in 
+// a switch statement; or a default label in a switch statement.
+// eg: begin: i = 0; , case 1: printf("End!"); , default: printf("Erro!");
+// TODO
+labeled_statement	::= IDENTIFIER COLON statement
+					| CASE constant_expression COLON statement
+					| DEFAULT COLON statement;
+
+// An expression followed by a semicolon is a statement. Most statements in a 
+// typical C program are expression statements, such as assignments or 
+// function calls.
+// eg: ; , x = 1; , f(1, 2); , x[0] = 12; , printf("Oi!");
+// TODO
+expression_statement	::= SEMICOLON
+						| expression SEMICOLON;
+
+// The selection statements choose between one of several statements depending 
+// on the value of an expression.
+// eg: if(x > 2) a = x; else a = y; , if(x > 2) a = x; , switch(x) a = x;
+// TODO
+selection_statement	::= IF LPAREN expression RPAREN statement ELSE statement
+					| IF LPAREN expression RPAREN statement
+					| SWITCH LPAREN expression RPAREN statement;
+
+// The jump statements unconditionally transfer flow control.
+// eg: goto start; , continue; , break; , return; , return x + 1;
+// TODO
+jump_statement	::= GOTO IDENTIFIER SEMICOLON
+				| CONTINUE SEMICOLON
+				| BREAK SEMICOLON
+				| RETURN SEMICOLON
+				| RETURN expression SEMICOLON;
+
+// Assignment of a designator_list, that usualy it's inside a declaration.
+// eg: [i][j] = , [x].a = , .left.left =
+// TODO
+designation	::= designator_list ASSIGN;
+
+// Here we defined the 11º precedence on operators in C, the logical and "&&".
+// It's used to evaluate bool values on the conditions in C.
+// eg: x , a + b , a[i] , x && a , a && b && c , a && b && !c
+// TODO
+logical_and_expression	::= inclusive_or_expression
+						| logical_and_expression AND_OP inclusive_or_expression;
+
+// The operands of any operator may be other expressions or they may be 
+// primary expressions (e.g. in 1+2*3, the operands of operator+ are the 
+// subexpression 2*3 and the primary expression 1). Primary expressions 
+// are any of the following: constants and literals (e.g. 2 or
+// "Hello, world"); suitably declared identifiers (e.g. n or printf); 
+// generic selections
+// eg: x , a , b , 11 , 12.2 , 0xA2 , "oi" , "tchau" , "Hi, Leo!" , 
+// (x >= 2) , (a == (i = j + i + 1)) , _Generic(x = 1, int: x = 2)
+// TODO
+primary_expression	::= IDENTIFIER
+					| constant
+					| string
+					| LPAREN expression RPAREN
+					| generic_selection;
+
+// Comma-separated list of expressions (which cannot be comma operators) of 
+// any complete object type. May be omitted when calling functions that take 
+// no arguments.
+// eg: x , x + 2, a , a, b, c * 2
+// TODO
+argument_expression_list	::= assignment_expression
+							| argument_expression_list COMMA assignment_expression;
+
+// Designator-list is a list of either array designators of the form 
+// [constant-expression] or struct/union member designators of the form
+// .identifier ;
+// eg: [i] , [i][j] , .left.left
+// TODO
+designator_list	::= designator
+				| designator_list designator;
+
+// Here we defined the 10º precedence on operators in C, the bitwise or "|".
+// It's used to evaluate bitwise values in C.
+// eg: x , a + b , a[i] , x | y , a | b | c , a ^ b & c , a << 2 | b
+// TODO
+inclusive_or_expression	::= exclusive_or_expression
+						| inclusive_or_expression OR exclusive_or_expression;
+
+// Constant values of certain types may be embedded in the source code of a C 
+// program using specialized expressions known as literals (for lvalue 
+// expressions) and constants (for non-lvalue expressions).
+// eg: 1001 , 20.5 , 0xA3 , 0732 , MAX
+// TODO
+constant	::= I_CONSTANT
+			| F_CONSTANT
+			| ENUMERATION_CONSTANT;
+
+// Constructs an unnamed object of specified character array type in-place, 
+// used when a character string needs to be embedded in source code.
+// eg: "oi" , "Hi, Dênnis!" , __func__
+// TODO
+string	::= STRING_LITERAL
+		| FUNC_NAME;
+
+// It specifies an adress related to the Identifier, like in
+// ball[12] or ball.radius.
+// eg: [i] , [12] , .radius
+// TODO
+designator	::= LBRACKET constant_expression RBRACKET
+			| DOT IDENTIFIER;
+
+// Here we defined the 9º precedence on operators in C, the bitwise 
+// exclusive or "^". It's used to evaluate bitwise values in C.
+// eg: x , a + b , a[i] , x ^ y , x ^ y && b , a ^ b ^ c
+// TODO
+exclusive_or_expression	::= and_expression
+						| exclusive_or_expression XOR and_expression;
+
+// Here we defined the 8º precedence on operators in C, the bitwise and "&". 
+// It's used to evaluate bitwise values in C.
+// eg: x , a + b , x[i] , x & y , x & y & c , a << 2 & c
+// TODO
+and_expression	::= equality_expression
+				| and_expression AND equality_expression;
+
+// Here we defined the 7º precedence on operators in C, the equality operators.
+// "==" and "!=". It's used to evaluate boolean values in C.
+// eg: x , a + b , x == 0 , x != 12 , a >= 2 , i - 2 == 3
+// TODO
+equality_expression	::= relational_expression
+					| equality_expression EQ_OP relational_expression
+					| equality_expression NE_OP relational_expression;
+
+// Here we defined the 6º precedence on operators in C, the relational operators.
+// It's used to evaluate boolean values in C.
+// eg: x , a + b , a[i] , x < 2 , x > a , x <= 12 , x >= b
+// TODO
+relational_expression	::= shift_expression
+						| relational_expression LE shift_expression
+						| relational_expression GE shift_expression
+						| relational_expression LE_OP shift_expression
+						| relational_expression GE_OP shift_expression;
+
+// Here we defined the 5º precedence on operators in C, the shift operators.
+// It's used to evaluate bitwise values in C, or calculate exponential with 2
+// as a base.
+// eg: x , a + b , a[i] , x << 2 , x >> a
+// TODO
+shift_expression	::= additive_expression
+					| shift_expression LEFT_OP additive_expression
+					| shift_expression RIGHT_OP additive_expression;
+
+// Here we defined the 4º precedence on operators in C, the addition operators.
+// It's used to evaluate numbers values in C, in addition or subtraction.
+// eg: x , a[i] , x + 2 , x - 3 , x*2 + 3
+// TODO
+additive_expression	::= multiplicative_expression
+					| additive_expression ADD multiplicative_expression
+					| additive_expression SUB multiplicative_expression;
+
+// Here we defined the 3º precedence on operators in C, the multiplicative
+// operators like "*", "/" and "%". It's used to evaluate numbers values in
+// C, in multiplication or remainder calculation.
+// eg: x , x * 2 , x / a , x % 5 , 2*x++
+// TODO
+multiplicative_expression	::= cast_expression
+							| multiplicative_expression MUL cast_expression
+							| multiplicative_expression DIV cast_expression
+							| multiplicative_expression MOD cast_expression;
+
+
+// Known but unnecessary rules for semantics.
+// These rules are completely outside our scope. We can ignore them without problems.
+
+// Storage-class specifiers appear in declarations. At most one specifier may be 
+// used, except that _Thread_local may be combined with static or extern to adjust
+// linkage. The storage-class specifiers determine two independent properties of 
+// the names they declare: storage duration and linkage.
+// eg: typedef , extern , static , _Thread_local , auto , register
+storage_class_specifier ::= TYPEDEF
+						| EXTERN
+						| STATIC
+						| THREAD_LOCAL
+						| AUTO
+						| REGISTER;
 
 // Each individual type in the C type system has several qualified versions of 
 // that type, corresponding to one, two, or all four of the const, volatile, _Atomic, 
@@ -329,50 +719,6 @@ pointer	::= MUL type_qualifier_list pointer
 		| MUL pointer
 		| MUL;
 
-// Provide type information and/or identifier to declare. Can be the identifier
-// that this declarator introduces; any declarator may be enclosed in parentheses;
-// can be an array declarator: the declaration S D[N] declares D as an array of N 
-// objects of the type determined by S; can be function declarator: the 
-// declaration S D(params) declared D as a function taking the parameters params 
-// and returning S.
-// eg: x , (x) , (*obj), m[] , m[*] , m[20] , x[i = 0], x(int, int) , x(), 
-// x(a, b, c)
-direct_declarator	::= IDENTIFIER:id {: System.out.println("Saw an identifier in a declaration.");
-                                      Variable v = new Variable((String) id, new Type("null"));
-                                      semanticAnalyser.addScopedVar(v);
-                                      RESULT = v; :}
-					| LPAREN declarator RPAREN
-					| direct_declarator LBRACKET RBRACKET
-					| direct_declarator LBRACKET MUL RBRACKET
-					| direct_declarator LBRACKET STATIC type_qualifier_list assignment_expression RBRACKET
-					| direct_declarator LBRACKET STATIC assignment_expression RBRACKET
-					| direct_declarator LBRACKET type_qualifier_list MUL RBRACKET
-					| direct_declarator LBRACKET type_qualifier_list STATIC assignment_expression RBRACKET
-					| direct_declarator LBRACKET type_qualifier_list assignment_expression RBRACKET
-					| direct_declarator LBRACKET type_qualifier_list RBRACKET
-					| direct_declarator LBRACKET assignment_expression RBRACKET
-					| direct_declarator LPAREN parameter_type_list RPAREN
-					| direct_declarator LPAREN RPAREN
-					| direct_declarator LPAREN identifier_list RPAREN;
-
-// Set of declarations and statements at sequence.
-// eg: int i = 0; , int i = 0; printf(i++); printf(i++);
-block_item_list	::= block_item
-				| block_item_list block_item;
-
-// Declarators may be accompanied by initializers. The enum, struct, and union 
-// declarations may omit declarators, in which case they only introduce 
-// the enumeration constants and/or tags.
-// eg: *x = &a, c = 3 , c , *f(void) = &calc
-init_declarator	::= declarator ASSIGN initializer
-				| declarator:v {: RESULT=v; :};
-
-// Constant values of certain types may be embedded in the source code of a 
-// C program using specialized expressions known as literals (for lvalue
-// expressions) and constants (for non-lvalue expressions).
-// eg: 12, 14, 3.14
-constant_expression	::= conditional_expression;
-
 // Defines an abstract data type, with struct or union.
 // eg: struct {} , struct Retangle {} , struct Retangle
 struct_or_union_specifier	::= struct_or_union LCURLY struct_declaration_list RCURLY
@@ -390,28 +736,15 @@ enum_specifier	::= ENUM LCURLY enumerator_list RCURLY
 				| ENUM IDENTIFIER LCURLY enumerator_list COMMA RCURLY
 				| ENUM IDENTIFIER;
 
-// A set of names that defines the type of a value.
-// eg: int[] , int (*int, *int) , char[30] , *void() , int, long int
-type_name	::= specifier_qualifier_list abstract_declarator
-			| specifier_qualifier_list;
-
 // List of keywords changing the aspect of a value.
 // eg: const , volatile const
 type_qualifier_list	::= type_qualifier
 					| type_qualifier_list type_qualifier;
 
-// Here we defined the 14º precedence on operators in C, the assignment and 
-// compound assignment operators that are binary operators that modify the 
-// variable to their left using the value to their right.
-// eg: x , a + b , i++ , x++ = a + b , a += m , i *= 2
-assignment_expression	::= conditional_expression
-						| unary_expression assignment_operator assignment_expression;
-
-// Either the single keyword void or a comma-separated list of parameters, 
-// which may end with an ellipsis parameter.
-// eg: int x, int y, ... , int x
-parameter_type_list	::= parameter_list COMMA ELLIPSIS
-					| parameter_list;
+// A set of names that defines the type of a value.
+// eg: int[] , int (*int, *int) , char[30] , *void() , int, long int
+type_name	::= specifier_qualifier_list abstract_declarator
+			| specifier_qualifier_list;
 
 // Comma-separated list of identifiers (only if this declarator is used as 
 // part of old-style function definition), must be omitted for old-style 
@@ -419,26 +752,6 @@ parameter_type_list	::= parameter_list COMMA ELLIPSIS
 // eg: x , x, a, b
 identifier_list	::= IDENTIFIER
 				| identifier_list COMMA IDENTIFIER;
-
-// Block item, it's a declaration or a statement.
-// eg: int i = 0; , f(1, 3); , printf("Oi");
-block_item	::= declaration
-			| statement;
-
-// A declaration of an object may provide its initial value through the 
-// process known as initialization. For each declarator, the initializer, 
-// if not omitted, may be a expression, or a initializer-list.
-// eg: {[0].a = {1}, [1].a[0] = 2} , {1, 2, 3,} , x + a , 12.2 , "oi"
-initializer	::= LCURLY initializer_list RCURLY
-			| LCURLY initializer_list COMMA RCURLY
-			| assignment_expression;
-
-// Here we defined the 13º precedence on operators in C, the ternary conditional "?:",
-// which allows to create a mini if-then-else calculation. Note the restriction on the values to
-// be evaluated as bool or not, and the else value.
-// eg: x , a + b , i++ , x > 2 ? 12 : x + 12 , condition ? i += 2 : condition2 ? j += 2 : 0
-conditional_expression	::= logical_or_expression
-						| logical_or_expression QUESTION expression COLON conditional_expression;
 
 // Keywords that enable creation of abstract data types.
 // eg: struct , union
@@ -475,77 +788,6 @@ specifier_qualifier_list	::= type_specifier specifier_qualifier_list
 abstract_declarator	::= pointer direct_abstract_declarator
 					| pointer
 					| direct_abstract_declarator;
-
-// Here we defined the rest of the operators at 2º precedence in C, unary
-// operators like "i++" or "!(x >= 2)", they only are applied when put 
-// right before the expression, "prefixed" to the expression to change. 
-// It's used to execute various operations in C, but it affects only one 
-// expression at a time.
-// eg: x , s[i] , ++x , --x , -b , *b , ~2 , !(a || b) , *(int) x , 
-// sizeof x , sizeof(int) , _Alignof(int)
-unary_expression	::= postfix_expression
-					| INC_OP unary_expression
-					| DEC_OP unary_expression
-					| unary_operator cast_expression
-					| SIZEOF unary_expression
-					| SIZEOF LPAREN type_name RPAREN
-					| ALIGNOF LPAREN type_name RPAREN;
-
-// All assignment operators on C. Besides the assignment function
-// some executes different operations related to the value that
-// existed before the assignment.
-// eg: = , *= , /= , %= , += , -= , <<= , >>= , &= , ^= , |=
-assignment_operator	::= ASSIGN
-					| MUL_ASSIGN
-					| DIV_ASSIGN
-					| MOD_ASSIGN
-					| ADD_ASSIGN
-					| SUB_ASSIGN
-					| LEFT_ASSIGN
-					| RIGHT_ASSIGN
-					| AND_ASSIGN
-					| XOR_ASSIGN
-					| OR_ASSIGN;
-
-// Comma-separated list of parameters.
-// eg: int x , int x, int y , int, char
-parameter_list	::= parameter_declaration
-				| parameter_list COMMA parameter_declaration;
-
-// Statements are fragments of the C program that are executed in sequence. 
-// The body of any function is a compound statement, which, in turn is a 
-// sequence of statements and declarations.
-// eg: i = 2*b; , if(i > 0) i = -1;
-statement	::= labeled_statement
-			| compound_statement
-			| expression_statement
-			| selection_statement
-			| iteration_statement
-			| jump_statement;
-
-// A initializer-list is a non-empty comma-separated list of initializers (with 
-// an optional trailing comma), where each initializer has one of three 
-// possible forms: expression, {initializer_list} or designator_list = expression.
-// eg: [0].a = {1} , x , 12 , [0].a = {1}, [1].a[0] = 2 , 1, 2, 3
-initializer_list	::= designation initializer
-					| initializer
-					| initializer_list COMMA designation initializer
-					| initializer_list COMMA initializer;
-
-// Here we defined the 12º precedence on operators in C, the logical or "||".
-// It's used to evaluate bool values on the conditions in C.
-// eg: x , a + b , x || a , a || b || c , a || b && c
-logical_or_expression	::= logical_and_expression
-						| logical_or_expression OR_OP logical_and_expression;
-
-// An expression is a sequence of operators and their operands, that specifies a
-// computation. Expression evaluation may produce a result (e.g., evaluation of
-// 2+2 produces the result 4), may generate side-effects (e.g. evaluation of 
-// printf("%d",4) sends the character '4' to the standard output stream), and 
-// may designate objects or functions.
-// eg: x , a = 2 , a + b , a + (-b) , x, a = 2
-expression	::= assignment_expression
-			| expression COMMA assignment_expression;
 
 // Variable declarations, bit field declarations, and static assert declarations.
 // eg: long int; char ; , _Static_assert(x, "oi");
@@ -592,70 +834,6 @@ direct_abstract_declarator	::= LPAREN abstract_declarator RPAREN
 							| direct_abstract_declarator LPAREN RPAREN
 							| direct_abstract_declarator LPAREN parameter_type_list RPAREN;
 
-// Here we defined the operators at 1º precedence in C, postfix operators 
-// like "a[i]" or "calc()", they only are applied when put right after the 
-// expression, "postfixed" to the expression to change.
-// It's used to execute plenty things in C, affecting only one expression
-// at a time. They are related to value addressing, and function execution, 
-// hence the high priority.
-// eg: x , x(20) , f() , f(a = 2, b = 3) , x.a , x->a , x++ , x-- , 
-// (Retangle){a = 2} , {Retangle}{a = 2,}
-postfix_expression	::= primary_expression
-					| postfix_expression LBRACKET expression RBRACKET
-					| postfix_expression LPAREN RPAREN
-					| postfix_expression LPAREN argument_expression_list RPAREN
-					| postfix_expression DOT IDENTIFIER
-					| postfix_expression PTR_OP IDENTIFIER
-					| postfix_expression INC_OP
-					| postfix_expression DEC_OP
-					| LPAREN type_name RPAREN LCURLY initializer_list RCURLY
-					| LPAREN type_name RPAREN LCURLY initializer_list COMMA RCURLY;
-
-// All of prefixed unary operators on C. Perform various operations
-// at number, logical or bitwise scope.
-// eg: & , * , + , - , ~ , !
-unary_operator	::= AND
-				| MUL
-				| ADD
-				| SUB
-				| COMPLEMENT
-				| NE;
-
-// Here we defined one of the operators at 2º precedence in C, the cast
-// operation like "(int) x" or "(float) 2 / 12". It's used to transform 
-// values to different types in C.
-// eg: x , a[i++] , (int) x , (float) 2 , (float) ++i
-cast_expression	::= unary_expression
-				| LPAREN type_name RPAREN cast_expression;
-
-// A specific declaration, related to parameters on functions.
-// eg: int x , int* , int[][] , int
-parameter_declaration	::= declaration_specifiers declarator
-						| declaration_specifiers abstract_declarator
-						| declaration_specifiers;
-
-// Any statement can be labeled, by providing a name followed by a colon 
-// before the statement itself. It can be: target for a goto; case label in 
-// a switch statement; or a default label in a switch statement.
-// eg: begin: i = 0; , case 1: printf("End!"); , default: printf("Erro!");
-labeled_statement	::= IDENTIFIER COLON statement
-					| CASE constant_expression COLON statement
-					| DEFAULT COLON statement;
-
-// An expression followed by a semicolon is a statement. Most statements in a 
-// typical C program are expression statements, such as assignments or 
-// function calls.
-// eg: ; , x = 1; , f(1, 2); , x[0] = 12; , printf("Oi!");
-expression_statement	::= SEMICOLON
-						| expression SEMICOLON;
-
-// The selection statements choose between one of several statements depending 
-// on the value of an expression.
-// eg: if(x > 2) a = x; else a = y; , if(x > 2) a = x; , switch(x) a = x;
-selection_statement	::= IF LPAREN expression RPAREN statement ELSE statement
-					| IF LPAREN expression RPAREN statement
-					| SWITCH LPAREN expression RPAREN statement;
-
 // The iteration statements repeatedly execute a statement.
 // eg: while(x > 2) i++; , do i++; while(x > 2); , for(;;) i++; ,
 // for(;; i++) a = b + 2; , for(int i = 0; x > 2) i++; , for(int i = 0; x > 2; i++) x += a;
@@ -666,24 +844,6 @@ iteration_statement	::= WHILE LPAREN expression RPAREN statement
 					| FOR LPAREN declaration expression_statement RPAREN statement
 					| FOR LPAREN declaration expression_statement expression RPAREN statement;
 
-// The jump statements unconditionally transfer flow control.
-// eg: goto start; , continue; , break; , return; , return x + 1;
-jump_statement	::= GOTO IDENTIFIER SEMICOLON
-				| CONTINUE SEMICOLON
-				| BREAK SEMICOLON
-				| RETURN SEMICOLON
-				| RETURN expression SEMICOLON;
-
-// Assignment of a designator_list, that usualy it's inside a declaration.
-// eg: [i][j] = , [x].a = , .left.left =
-designation	::= designator_list ASSIGN;
-
-// Here we defined the 11º precedence on operators in C, the logical and "&&".
-// It's used to evaluate bool values on the conditions in C.
-// eg: x , a + b , a[i] , x && a , a && b && c , a && b && !c
-logical_and_expression	::= inclusive_or_expression
-						| logical_and_expression AND_OP inclusive_or_expression;
-
 // Comma-separated list of struct declarators.
 // eg: b1 : 2, b2 : 4, : 2, b3 : 4
 struct_declarator_list	::= struct_declarator
@@ -693,118 +853,12 @@ struct_declarator_list	::= struct_declarator
 // eg: ML , MAX_INT , MIN , STEP
 enumeration_constant	::= IDENTIFIER;
 
-// The operands of any operator may be other expressions or they may be 
-// primary expressions (e.g. in 1+2*3, the operands of operator+ are the 
-// subexpression 2*3 and the primary expression 1). Primary expressions 
-// are any of the following: constants and literals (e.g. 2 or
-// "Hello, world"); suitably declared identifiers (e.g. n or printf); 
-// generic selections
-// eg: x , a , b , 11 , 12.2 , 0xA2 , "oi" , "tchau" , "Hi, Leo!" , 
-// (x >= 2) , (a == (i = j + i + 1)) , _Generic(x = 1, int: x = 2)
-primary_expression	::= IDENTIFIER
-					| constant
-					| string
-					| LPAREN expression RPAREN
-					| generic_selection;
-
-// Comma-separated list of expressions (which cannot be comma operators) of 
-// any complete object type. May be omitted when calling functions that take 
-// no arguments.
-// eg: x , x + 2, a , a, b, c * 2
-argument_expression_list	::= assignment_expression
-							| argument_expression_list COMMA assignment_expression;
-
-// Designator-list is a list of either array designators of the form 
-// [constant-expression] or struct/union member designators of the form
-// .identifier ;
-// eg: [i] , [i][j] , .left.left
-designator_list	::= designator
-				| designator_list designator;
-
-// Here we defined the 10º precedence on operators in C, the bitwise or "|".
-// It's used to evaluate bitwise values in C.
-// eg: x , a + b , a[i] , x | y , a | b | c , a ^ b & c , a << 2 | b
-inclusive_or_expression	::= exclusive_or_expression
-						| inclusive_or_expression OR exclusive_or_expression;
-
 // Declares a member with explicit width, in bits. Adjacent bit field members 
 // may be packed to share and straddle the individual bytes.
 // eg: : 2 , a : 8 , b : 16 , b
 struct_declarator	::= COLON constant_expression
 					| declarator COLON constant_expression
 					| declarator;
-
-// Constant values of certain types may be embedded in the source code of a C 
-// program using specialized expressions known as literals (for lvalue 
-// expressions) and constants (for non-lvalue expressions).
-// eg: 1001 , 20.5 , 0xA3 , 0732 , MAX
-constant	::= I_CONSTANT
-			| F_CONSTANT
-			| ENUMERATION_CONSTANT;
-
-// Constructs an unnamed object of specified character array type in-place, 
-// used when a character string needs to be embedded in source code.
-// eg: "oi" , "Hi, Dênnis!" , __func__
-string	::= STRING_LITERAL
-		| FUNC_NAME;
-
-// It specifies an adress related to the Identifier, like in
-// ball[12] or ball.radius.
-// eg: [i] , [12] , .radius
-designator	::= LBRACKET constant_expression RBRACKET
-			| DOT IDENTIFIER;
-
-// Here we defined the 9º precedence on operators in C, the bitwise 
-// exclusive or "^". It's used to evaluate bitwise values in C.
-// eg: x , a + b , a[i] , x ^ y , x ^ y && b , a ^ b ^ c
-exclusive_or_expression	::= and_expression
-						| exclusive_or_expression XOR and_expression;
-
-// Here we defined the 8º precedence on operators in C, the bitwise and "&". 
-// It's used to evaluate bitwise values in C.
-// eg: x , a + b , x[i] , x & y , x & y & c , a << 2 & c
-and_expression	::= equality_expression
-				| and_expression AND equality_expression;
-
-// Here we defined the 7º precedence on operators in C, the equality operators.
-// "==" and "!=". It's used to evaluate boolean values in C.
-// eg: x , a + b , x == 0 , x != 12 , a >= 2 , i - 2 == 3
-equality_expression	::= relational_expression
-					| equality_expression EQ_OP relational_expression
-					| equality_expression NE_OP relational_expression;
-
-// Here we defined the 6º precedence on operators in C, the relational operators.
-// It's used to evaluate boolean values in C.
-// eg: x , a + b , a[i] , x < 2 , x > a , x <= 12 , x >= b
-relational_expression	::= shift_expression
-						| relational_expression LE shift_expression
-						| relational_expression GE shift_expression
-						| relational_expression LE_OP shift_expression
-						| relational_expression GE_OP shift_expression;
-
-// Here we defined the 5º precedence on operators in C, the shift operators.
-// It's used to evaluate bitwise values in C, or calculate exponential with 2
-// as a base.
-// eg: x , a + b , a[i] , x << 2 , x >> a
-shift_expression	::= additive_expression
-					| shift_expression LEFT_OP additive_expression
-					| shift_expression RIGHT_OP additive_expression;
-
-// Here we defined the 4º precedence on operators in C, the addition operators.
-// It's used to evaluate numbers values in C, in addition or subtraction.
-// eg: x , a[i] , x + 2 , x - 3 , x*2 + 3
-additive_expression	::= multiplicative_expression
-					| additive_expression ADD multiplicative_expression
-					| additive_expression SUB multiplicative_expression;
-
-// Here we defined the 3º precedence on operators in C, the multiplicative
-// operators like "*", "/" and "%". It's used to evaluate numbers values in
-// C, in multiplication or remainder calculation.
-// eg: x , x * 2 , x / a , x % 5 , 2*x++
-multiplicative_expression	::= cast_expression
-							| multiplicative_expression MUL cast_expression
-							| multiplicative_expression DIV cast_expression
-							| multiplicative_expression MOD cast_expression;
 
 
 // Unknown and unnecessary rules for semantics.
