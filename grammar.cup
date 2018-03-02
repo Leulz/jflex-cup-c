@@ -208,11 +208,20 @@ external_declaration	::= function_definition
 function_definition	::= declaration_specifiers declarator declaration_list compound_statement
 					| declaration_specifiers declarator compound_statement;
 
-// eg: static int; , static  , _Static_assert(x, "oi");
+// A declaration is a C language construct that introduces one or more identifiers 
+// into the program and specifies their meaning and properties. The enum, struct, 
+// and union declarations may omit declarators. Can be a static-assert declaration.
+// eg: enum COLOR {RED, GREEN, BLUE}; , const int *f(void); , int a, *b=NULL; ,
+// _Static_assert(2 + 2 == 4, "Whoa dude!");
 declaration	::= declaration_specifiers SEMICOLON
 			| declaration_specifiers:t init_declarator_list:v SEMICOLON {: semanticAnalyser.commitDeclaredVariables((Type) t); :}
 			| static_assert_declaration;
 
+// Whitespace-separated list of, in any order, one type specifier like void, arithmetic
+// or atomic types; zero or one storage-class specifiers: typedef, auto, register, static, 
+// extern, thread_local; zero or more type qualifiers: const, volatile, restrict, _Atomic;
+// (only when declaring functions), zero or more function specifier: inline, noreturn;
+// zero or more alignment specifiers: alignas.
 // eg: typedef static , static , int static , int , const static , const , 
 // inline const , inline , _Alignas() static , _Alignas()
 declaration_specifiers	::= storage_class_specifier declaration_specifiers:t {: RESULT = t; :}
@@ -226,25 +235,34 @@ declaration_specifiers	::= storage_class_specifier declaration_specifiers:t {: R
 						| alignment_specifier declaration_specifiers
 						| alignment_specifier;
 
-// eg: *x, x
+// Provides type information and/or the identifier to declare, can be a
+// pointer declaration: the declaration S * cvr D; declares D as a 
+// cvr-qualified pointer to the type determined by S.
+// eg: a , *b , *f(void) , *f(int i, int a)
 declarator	::= pointer direct_declarator
 			| direct_declarator:v {: RESULT=v; :};
 
+// Set of declarations in sequence.
+// eg: int i = 0; int j = 1 , char c;
 declaration_list	::= declaration
 					| declaration_list declaration;
 
-// eg: {} , { int i = 0; }
+// A compound statement, or block, is a brace-enclosed sequence of statements and declarations.
+// eg: {} , { int i = 0; } , {int i = 0; printf(i++); printf(i++);}
 compound_statement	::= LCURLY RCURLY
 					| LCURLY  block_item_list RCURLY;
 
-// eg:
+
+// Comma-separated list of declarators (each declarator provides additional 
+// type information and/or the identifier to declare).
+// eg: c = 3, i = 2 , *x = &i, *y = &j , a = 1
 init_declarator_list	::= init_declarator:v {: RESULT=v; :}
 						| init_declarator_list COMMA init_declarator;
 
-// eg: _Static_assert(x, "oi");
-static_assert_declaration	::= STATIC_ASSERT LPAREN constant_expression COMMA STRING_LITERAL RPAREN SEMICOLON;
-
-// identifiers must be flagged as TYPEDEF_NAME
+// Storage-class specifiers appear in declarations. At most one specifier may be 
+// used, except that _Thread_local may be combined with static or extern to adjust
+// linkage. The storage-class specifiers determine two independent properties of 
+// the names they declare: storage duration and linkage.
 // eg: typedef , extern , static , _Thread_local , auto , register
 storage_class_specifier ::= TYPEDEF
 						| EXTERN
@@ -253,6 +271,9 @@ storage_class_specifier ::= TYPEDEF
 						| AUTO
 						| REGISTER;
 
+// All keywords or expressions that represents the type of a value: can be void, an
+// an arithmetic type, an atomic type, a name earlier introduced by a typedef declaration,
+// struct, union, or enum specifier.
 // eg: void , char , short , int , long , float , double , signed , unsigned ,
 // bool , _Complex , _Imaginary , _Atomic(int) , enum{ML, MN} , Retangle
 type_specifier	::= VOID
@@ -272,28 +293,38 @@ type_specifier	::= VOID
 				| enum_specifier
 				| TYPEDEF_NAME;
 
+// Each individual type in the C type system has several qualified versions of 
+// that type, corresponding to one, two, or all four of the const, volatile, _Atomic, 
+// and, for pointers to object types, restrict qualifiers.
 // eg: const , restrict , volatile , _Atomic
 type_qualifier	::= CONST
 				| RESTRICT
 				| VOLATILE
 				| ATOMIC;
 
+// Function specifiers appear in declarations. They can be used together, serving 
+// as a hint for the compiler to perform optimizations, such as function inlining.
 // eg: inline , _Noreturn
 function_specifier	::= INLINE
 					| NORETURN;
 
-// eg: _Alignas(int) , _Alignas()
-alignment_specifier	::= ALIGNAS LPAREN type_name RPAREN
-					| ALIGNAS LPAREN constant_expression RPAREN;
-
-// eg: *const, volatile* , *const, volatile , ** , * 
+// Pointer is a type of an object that refers to a function or an object of 
+// another type, possibly adding qualifiers. Pointer may also refer to nothing,
+// which is indicated by the special null pointer value.
+// eg: *p, **p , * const pc , * const * pc , ** , * 
 pointer	::= MUL type_qualifier_list pointer
 		| MUL type_qualifier_list
 		| MUL pointer
 		| MUL;
 
-// eg: x , (x) , x[] , x[*] , x[static int i = 0] , x[static i = 0] , x[int*] , 
-// x[int static i = 0] , x[int i = 0] , x[int] , x[i = 0], x(int, int) , x(), x(a, b, c)
+// Provide type information and/or identifier to declare. Can be the identifier
+// that this declarator introduces; any declarator may be enclosed in parentheses;
+// can be an array declarator: the declaration S D[N] declares D as an array of N 
+// objects of the type determined by S; can be function declarator: the 
+// declaration S D(params) declared D as a function taking the parameters params 
+// and returning S.
+// eg: x , (x) , (*obj), m[] , m[*] , m[20] , x[i = 0], x(int, int) , x(), 
+// x(a, b, c)
 direct_declarator	::= IDENTIFIER:id {: System.out.println("Saw an identifier in a declaration.");
                                       Variable v = new Variable((String) id, new Type("null"));
                                       semanticAnalyser.addScopedVar(v);
@@ -312,35 +343,46 @@ direct_declarator	::= IDENTIFIER:id {: System.out.println("Saw an identifier in 
 					| direct_declarator LPAREN RPAREN
 					| direct_declarator LPAREN identifier_list RPAREN;
 
-// eg: int i = 0; , int i = 0; int j = i;
+// Set of declarations and statements at sequence.
+// eg: int i = 0; , int i = 0; printf(i++); printf(i++);
 block_item_list	::= block_item
 				| block_item_list block_item;
 
-// eg: *x = , *x
+// Declarators may be accompanied by initializers. The enum, struct, and union 
+// declarations may omit declarators, in which case they only introduce 
+// the enumeration constants and/or tags.
+// eg: *x = &a, c = 3 , c , *f(void) = &calc
 init_declarator	::= declarator ASSIGN initializer
 				| declarator:v {: RESULT=v; :};
 
-// with constraints
-// eg: x
+// Several varieties of expressions are known as constant expressions. They need
+// to have values available at compile time. Thus, it contains some constraints.
+// eg: 12, 14, 3.14
 constant_expression	::= conditional_expression;
 
-// eg: _Atomic(int)
-atomic_type_specifier	::= ATOMIC LPAREN type_name RPAREN;
-
+// Defines an abstract data type, with struct or union.
+// eg: struct {} , struct Retangle {} , struct Retangle
 struct_or_union_specifier	::= struct_or_union LCURLY struct_declaration_list RCURLY
 							| struct_or_union IDENTIFIER LCURLY struct_declaration_list RCURLY
 							| struct_or_union IDENTIFIER;
 
-// eg: enum{ML, MN} , enum{ML, MN,} , enum data{ML, MN} , enum data{ML, MN,} , enum data
+// An enumerated type is a distinct type whose value is a value of its 
+// underlying type, which includes the values of explicitly named constants 
+// (enumeration constants).
+// eg: enum{RED, GREEN, BLUE} , enum{RED = -1, GREEN, BLUE,} , 
+// enum colors{RED, GREEN, BLUE}
 enum_specifier	::= ENUM LCURLY enumerator_list RCURLY
 				| ENUM LCURLY enumerator_list COMMA RCURLY
 				| ENUM IDENTIFIER LCURLY enumerator_list RCURLY
 				| ENUM IDENTIFIER LCURLY enumerator_list COMMA RCURLY
 				| ENUM IDENTIFIER;
 
+// A set of names that defines the type of a value.
+// eg: int[] , int (*int, *int) , char[30] , *void() , int, long int
 type_name	::= specifier_qualifier_list abstract_declarator
 			| specifier_qualifier_list;
 
+// List of keywords changing the aspect of a value.
 // eg: const , volatile const
 type_qualifier_list	::= type_qualifier
 					| type_qualifier_list type_qualifier;
@@ -360,10 +402,15 @@ parameter_type_list	::= parameter_list COMMA ELLIPSIS
 identifier_list	::= IDENTIFIER
 				| identifier_list COMMA IDENTIFIER;
 
+// Block item, it's a declaration or a statement.
+// eg: int i = 0; , f(1, 3); , printf("Oi");
 block_item	::= declaration
 			| statement;
 
-// eg: {[i][j] = 12} , {[i][j] = 12,} , {x} , {x,} , x , 12
+// A declaration of an object may provide its initial value through the 
+// process known as initialization. For each declarator, the initializer, 
+// if not omitted, may be a expression, or a initializer-list.
+// eg: {[0].a = {1}, [1].a[0] = 2} , {1, 2, 3,} , x + a , 12.2 , "oi"
 initializer	::= LCURLY initializer_list RCURLY
 			| LCURLY initializer_list COMMA RCURLY
 			| assignment_expression;
@@ -375,25 +422,38 @@ initializer	::= LCURLY initializer_list RCURLY
 conditional_expression	::= logical_or_expression
 						| logical_or_expression QUESTION expression COLON conditional_expression;
 
+// Keywords that enable creation of abstract data types.
 // eg: struct , union
 struct_or_union ::= STRUCT
 				| UNION;
 
-// eg: char; , char; char;
+// Any number of variable declarations, bit field declarations, and static assert 
+// declarations. Members of incomplete type and members of function type are not 
+// allowed.
+// eg: int i, j; , int x; char *c;
 struct_declaration_list	::= struct_declaration
 						| struct_declaration_list struct_declaration;
 
-// eg: ML, ML, MN
+// Enumerator-list is a comma-separated list (with trailing comma permitted) 
+// (since C99) of enumerators, each of which has the form: enumerator = 
+// constant-expression, where enumerator are identifiers introduced by this 
+// declaration.
+// eg: RED, GREEN, BLUE , RED = -1, GREEN, BLUE
 enumerator_list	::= enumerator
 				| enumerator_list COMMA enumerator;
 
-// eg: char int , char , const char , const
+// Whitespace-separated list of, in any order, one type specifier like void, arithmetic
+// or atomic types; zero or more type qualifiers: const, volatile, restrict, _Atomic.
+// eg: char int , char , const char , const , long ing , short int , bool , char const
+// Retangle , enum{ML, MN}
 specifier_qualifier_list	::= type_specifier specifier_qualifier_list
 							| type_specifier
 							| type_qualifier specifier_qualifier_list
 							| type_qualifier;
 
-// eg: *[] , * , []
+// Ways of declaring a type, without naming its parts, parameters and such.
+// eg: *[] , *[12] , *[i = 0] , *(int x, int y) , *(int, char) , * , [] , 
+// [21], () , (int, char)
 abstract_declarator	::= pointer direct_abstract_declarator
 					| pointer
 					| direct_abstract_declarator;
@@ -413,6 +473,9 @@ unary_expression	::= postfix_expression
 					| SIZEOF LPAREN type_name RPAREN
 					| ALIGNOF LPAREN type_name RPAREN;
 
+// All assignment operators on C. Besides the assignment function
+// some executes different operations related to the value that
+// existed before the assignment.
 // eg: = , *= , /= , %= , += , -= , <<= , >>= , &= , ^= , |=
 assignment_operator	::= ASSIGN
 					| MUL_ASSIGN
@@ -426,7 +489,7 @@ assignment_operator	::= ASSIGN
 					| XOR_ASSIGN
 					| OR_ASSIGN;
 
-// eg: int x , int x, int y
+// eg: int x , int x, int y , int, char
 parameter_list	::= parameter_declaration
 				| parameter_list COMMA parameter_declaration;
 
@@ -437,7 +500,10 @@ statement	::= labeled_statement
 			| iteration_statement
 			| jump_statement;
 
-// eg: [i][j] = 12 , x , 12 , x, [i][j] = 12 , x, y
+// A initializer-list is a non-empty comma-separated list of initializers (with 
+// an optional trailing comma), where each initializer has one of three 
+// possible forms: expression, {initializer_list} or designator_list = expression.
+// eg: [0].a = {1} , x , 12 , [0].a = {1}, [1].a[0] = 2 , 1, 2, 3
 initializer_list	::= designation initializer
 					| initializer
 					| initializer_list COMMA designation initializer
@@ -456,21 +522,29 @@ logical_or_expression	::= logical_and_expression
 expression	::= assignment_expression
 			| expression COMMA assignment_expression;
 
-// for anonymous struct/union
-// eg: char; , char int; , 
+// Variable declarations, bit field declarations, and static assert declarations.
+// eg: long int; char ; , _Static_assert(x, "oi");
 struct_declaration	::= specifier_qualifier_list SEMICOLON
 					| specifier_qualifier_list struct_declarator_list SEMICOLON
 					| static_assert_declaration;
 
-// identifiers must be flagged as ENUMERATION_CONSTANT
+// Enumerator includes the values of explicitly named constants (enumeration 
+// constants). These new dentifiers must be flagged as ENUMERATION_CONSTANT.
+// If enumerator is followed by = constant-expression, its value is the 
+// value of that constant expression. If enumerator is not followed by = 
+// constant-expression, its value is the value one greater than the value
+// of the previous enumerator in the same enumeration. The value of the 
+// first enumerator (if it does not use = constant-expression) is zero.
 // eg: ML = x, ML
 enumerator	::= enumeration_constant ASSIGN constant_expression
 			| enumeration_constant;
 
-// eg: (*) , [] , [*] , [static const i = 0] , [static i = 0], [const static i = 0] ,
-// [const] , [i = 0] , [][] , [][*] , [][static const i = 0], [][static i = 0], 
-// [][const i = 0] , [][const static i = 0], [][const], [][i = 0] , (), (int x, int y) ,
-// []() , [](int x, int y)
+// Provide type information, without being related to any identifier.
+// eg: (*) , ([*]) , ([const]) , [] , [*] , [static const i = 0] , 
+// [static i = 0] , [const static i = 0] , [const] , [12] , [i = 0] , [][] , 
+// [][*] , [][static const i = 0], [][static i = 0], [][const i = 0] , 
+// [][const static i = 0], [][const], [][i = 0] , (), (int x, int y) ,
+// (int, char) , []() , [](int x, int y)
 direct_abstract_declarator	::= LPAREN abstract_declarator RPAREN
 							| LBRACKET RBRACKET
 							| LBRACKET MUL RBRACKET
@@ -512,6 +586,8 @@ postfix_expression	::= primary_expression
 					| LPAREN type_name RPAREN LCURLY initializer_list RCURLY
 					| LPAREN type_name RPAREN LCURLY initializer_list COMMA RCURLY;
 
+// All of prefixed unary operators on C. Perform various operations
+// at number, logical or bitwise scope.
 // eg: & , * , + , - , ~ , !
 unary_operator	::= AND
 				| MUL
@@ -527,7 +603,7 @@ unary_operator	::= AND
 cast_expression	::= unary_expression
 				| LPAREN type_name RPAREN cast_expression;
 
-// eg: int x , int* , int
+// eg: int x , int* , int[][] , int
 parameter_declaration	::= declaration_specifiers declarator
 						| declaration_specifiers abstract_declarator
 						| declaration_specifiers;
@@ -561,7 +637,7 @@ jump_statement	::= GOTO IDENTIFIER SEMICOLON
 				| RETURN SEMICOLON
 				| RETURN expression SEMICOLON;
 
-// Assignment of a designator chain like in matrix[i][j] = 2
+// Assignment of a designator_list, that usualy it's inside a declaration.
 // eg: [i][j] = , [x].a = , .left.left =
 designation	::= designator_list ASSIGN;
 
@@ -571,11 +647,12 @@ designation	::= designator_list ASSIGN;
 logical_and_expression	::= inclusive_or_expression
 						| logical_and_expression AND_OP inclusive_or_expression;
 
-// eg: :x , :x, :a
+// Comma-separated list of struct declarators.
+// eg: b1 : 2, b2 : 4, : 2, b3 : 4
 struct_declarator_list	::= struct_declarator
 						| struct_declarator_list COMMA struct_declarator;
 
-// Stands for the constants defined in enums BEFORE it has been defined as such.
+// Int values named by an enum structure.
 // eg: ML , MAX_INT , MIN , STEP
 enumeration_constant	::= IDENTIFIER;
 
@@ -593,7 +670,9 @@ primary_expression	::= IDENTIFIER
 argument_expression_list	::= assignment_expression
 							| argument_expression_list COMMA assignment_expression;
 
-// A chain of designations like in matrix[i][j], or tree.left.left
+// Designator-list is a list of either array designators of the form 
+// [constant-expression] or struct/union member designators of the form
+// .identifier ;
 // eg: [i] , [i][j] , .left.left
 designator_list	::= designator
 				| designator_list designator;
@@ -604,24 +683,26 @@ designator_list	::= designator
 inclusive_or_expression	::= exclusive_or_expression
 						| inclusive_or_expression OR exclusive_or_expression;
 
-// eg: :x , *x:a , *x
+// Declares a member with explicit width, in bits. Adjacent bit field members 
+// may be packed to share and straddle the individual bytes.
+// eg: : 2 , a : 8 , b : 16 , b
 struct_declarator	::= COLON constant_expression
 					| declarator COLON constant_expression
 					| declarator;
 
-// It represents a specific number of value. Includes character_constant
-// eg: 1001 , 20.5 , MAX
+// Constant values of certain types may be embedded in the source code of a C 
+// program using specialized expressions known as literals (for lvalue 
+// expressions) and constants (for non-lvalue expressions).
+// eg: 1001 , 20.5 , 0xA3 , 0732 , MAX
 constant	::= I_CONSTANT
 			| F_CONSTANT
 			| ENUMERATION_CONSTANT;
 
-// It represents a specifi text
-// eg: "oi" , __func__
+// Constructs an unnamed object of specified character array type in-place, 
+// used when a character string needs to be embedded in source code.
+// eg: "oi" , "Hi, Dênnis!" , __func__
 string	::= STRING_LITERAL
 		| FUNC_NAME;
-
-// eg: _Generic(x = 1, int: x = 2)
-generic_selection	::= GENERIC LPAREN assignment_expression COMMA generic_assoc_list RPAREN;
 
 // It specifies an adress related to the Identifier, like in
 // ball[12] or ball.radius.
@@ -635,19 +716,11 @@ designator	::= LBRACKET constant_expression RBRACKET
 exclusive_or_expression	::= and_expression
 						| exclusive_or_expression XOR and_expression;
 
-// eg: int: x = 2 , int: x = 2, default: x = 0
-generic_assoc_list	::= generic_association
-					| generic_assoc_list COMMA generic_association;
-
 // Here we defined the 8º precedence on operators in C, the bitwise and "&". 
 // It's used to evaluate bitwise values in C.
 // eg: x , a + b , x[i] , x & y , x & y & c , a << 2 & c
 and_expression	::= equality_expression
 				| and_expression AND equality_expression;
-
-// eg: int: x = 2 , default: x = 2
-generic_association	::= type_name COLON assignment_expression
-					| DEFAULT COLON assignment_expression;
 
 // Here we defined the 7º precedence on operators in C, the equality operators.
 // "==" and "!=". It's used to evaluate boolean values in C.
@@ -688,3 +761,46 @@ multiplicative_expression	::= cast_expression
 							| multiplicative_expression MUL cast_expression
 							| multiplicative_expression DIV cast_expression
 							| multiplicative_expression MOD cast_expression;
+
+
+// Unknown and unnecessary rules for semantics.
+// I've never seen this in my old days of C programming. They're related to
+// underscore strange operators: _Static_assert, _Alignas, _Atomic and _Generic.
+
+// The constant expression is evaluated at compile time and compared to zero. If 
+// it compares equal to zero, a compile-time error occurs and the compiler must 
+// display message as part of the error message (except that characters not 
+// in basic source character set aren't required to be displayed).
+// eg: _Static_assert(2 + 2 == 4, "Whoa dude!"); , 
+// _Static_assert(sizeof(int) < sizeof(char), "this program requires that int is less than char");
+static_assert_declaration	::= STATIC_ASSERT LPAREN constant_expression COMMA STRING_LITERAL RPAREN SEMICOLON;
+
+// Appears in the declaration syntax as one of the type specifiers to modify 
+// the alignment requirement of the object being declared.
+// eg: _Alignas(int) , _Alignas(x)
+alignment_specifier	::= ALIGNAS LPAREN type_name RPAREN
+					| ALIGNAS LPAREN constant_expression RPAREN;
+
+// Objects of atomic types are the only objects that are free from data races, 
+// that is, they may be modified by two threads concurrently or modified by one 
+// and read by another.
+// eg: _Atomic(int)
+atomic_type_specifier	::= ATOMIC LPAREN type_name RPAREN;
+
+// Provides a way to choose one of several expressions at compile time, based on 
+// a type of a controlling expression.
+// eg: _Generic(x, int: x*2, float: x*2.0) , _Generic(y, default: 10, int: 1, float: 2)
+generic_selection	::= GENERIC LPAREN assignment_expression COMMA generic_assoc_list RPAREN;
+
+// Comma-separated list of associations.
+// eg: int: x - 2 , int: x + 2, default: x
+generic_assoc_list	::= generic_association
+					| generic_assoc_list COMMA generic_association;
+
+// No two type-names in the association-list may specify compatible types. 
+// There may be only one association that uses the keyword default. If default 
+// is not used and none of the type-names are compatible with the type of the 
+// controlling expression, the program will not compile.
+// eg: int: x - 2 , default: x + 2
+generic_association	::= type_name COLON assignment_expression
+					| DEFAULT COLON assignment_expression;
