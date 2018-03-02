@@ -398,7 +398,13 @@ abstract_declarator	::= pointer direct_abstract_declarator
 					| pointer
 					| direct_abstract_declarator;
 
-// eg: x , ++x , --x , *(int) x , sizeof x , sizeof(int) , _Alignof(int)
+// Here we defined the rest of the operators at 2º precedence in C, unary
+// operators like "i++" or "!(x >= 2)", they only are applied when put 
+// right before the expression, "prefixed" to the expression to change. 
+// It's used to execute various operations in C, but it affects only one 
+// expression at a time.
+// eg: x , s[i] , ++x , --x , -b , *b , ~2 , !(a || b) , *(int) x , 
+// sizeof x , sizeof(int) , _Alignof(int)
 unary_expression	::= postfix_expression
 					| INC_OP unary_expression
 					| DEC_OP unary_expression
@@ -439,7 +445,7 @@ initializer_list	::= designation initializer
 
 // Here we defined the 12º precedence on operators in C, the logical or "||".
 // It's used to evaluate bool values on the conditions in C.
-// eg: x , x || a
+// eg: x , a + b , x || a , a || b || c , a || b && c
 logical_or_expression	::= logical_and_expression
 						| logical_or_expression OR_OP logical_and_expression;
 
@@ -487,7 +493,14 @@ direct_abstract_declarator	::= LPAREN abstract_declarator RPAREN
 							| direct_abstract_declarator LPAREN RPAREN
 							| direct_abstract_declarator LPAREN parameter_type_list RPAREN;
 
-// eg: x , x(20) , f() , f(a = 2, b = 3) , x.a , x->a , x++ , x-- , (Retangle){a = 2} , {Retangle}{a = 2,}
+// Here we defined the operators at 1º precedence in C, postfix operators 
+// like "a[i]" or "calc()", they only are applied when put right after the 
+// expression, "postfixed" to the expression to change.
+// It's used to execute plenty things in C, affecting only one expression
+// at a time. They are related to value addressing, and function execution, 
+// hence the high priority.
+// eg: x , x(20) , f() , f(a = 2, b = 3) , x.a , x->a , x++ , x-- , 
+// (Retangle){a = 2} , {Retangle}{a = 2,}
 postfix_expression	::= primary_expression
 					| postfix_expression LBRACKET expression RBRACKET
 					| postfix_expression LPAREN RPAREN
@@ -507,7 +520,10 @@ unary_operator	::= AND
 				| COMPLEMENT
 				| NE;
 
-// eg: x , (int) x
+// Here we defined one of the operators at 2º precedence in C, the cast
+// operation like "(int) x" or "(float) 2 / 12". It's used to transform 
+// values to different types in C.
+// eg: x , a[i++] , (int) x , (float) 2 , (float) ++i
 cast_expression	::= unary_expression
 				| LPAREN type_name RPAREN cast_expression;
 
@@ -551,7 +567,7 @@ designation	::= designator_list ASSIGN;
 
 // Here we defined the 11º precedence on operators in C, the logical and "&&".
 // It's used to evaluate bool values on the conditions in C.
-// eg: x , x && a
+// eg: x , a + b , a[i] , x && a , a && b && c , a && b && !c
 logical_and_expression	::= inclusive_or_expression
 						| logical_and_expression AND_OP inclusive_or_expression;
 
@@ -582,7 +598,9 @@ argument_expression_list	::= assignment_expression
 designator_list	::= designator
 				| designator_list designator;
 
-// eg: x , x | y
+// Here we defined the 10º precedence on operators in C, the bitwise or "|".
+// It's used to evaluate bitwise values in C.
+// eg: x , a + b , a[i] , x | y , a | b | c , a ^ b & c , a << 2 | b
 inclusive_or_expression	::= exclusive_or_expression
 						| inclusive_or_expression OR exclusive_or_expression;
 
@@ -611,7 +629,9 @@ generic_selection	::= GENERIC LPAREN assignment_expression COMMA generic_assoc_l
 designator	::= LBRACKET constant_expression RBRACKET
 			| DOT IDENTIFIER;
 
-// eg: x , x ^ y
+// Here we defined the 9º precedence on operators in C, the bitwise 
+// exclusive or "^". It's used to evaluate bitwise values in C.
+// eg: x , a + b , a[i] , x ^ y , x ^ y && b , a ^ b ^ c
 exclusive_or_expression	::= and_expression
 						| exclusive_or_expression XOR and_expression;
 
@@ -619,7 +639,9 @@ exclusive_or_expression	::= and_expression
 generic_assoc_list	::= generic_association
 					| generic_assoc_list COMMA generic_association;
 
-// eg: x , x & y
+// Here we defined the 8º precedence on operators in C, the bitwise and "&". 
+// It's used to evaluate bitwise values in C.
+// eg: x , a + b , x[i] , x & y , x & y & c , a << 2 & c
 and_expression	::= equality_expression
 				| and_expression AND equality_expression;
 
@@ -627,29 +649,41 @@ and_expression	::= equality_expression
 generic_association	::= type_name COLON assignment_expression
 					| DEFAULT COLON assignment_expression;
 
-// eg: x , x == 0 , x != 12
+// Here we defined the 7º precedence on operators in C, the equality operators.
+// "==" and "!=". It's used to evaluate boolean values in C.
+// eg: x , a + b , x == 0 , x != 12 , a >= 2 , i - 2 == 3
 equality_expression	::= relational_expression
 					| equality_expression EQ_OP relational_expression
 					| equality_expression NE_OP relational_expression;
 
-// eg: x , x < 2 , x > a , x <= 12 , x >= b
+// Here we defined the 6º precedence on operators in C, the relational operators.
+// It's used to evaluate boolean values in C.
+// eg: x , a + b , a[i] , x < 2 , x > a , x <= 12 , x >= b
 relational_expression	::= shift_expression
 						| relational_expression LE shift_expression
 						| relational_expression GE shift_expression
 						| relational_expression LE_OP shift_expression
 						| relational_expression GE_OP shift_expression;
 
-// eg: x , x << 2 , x >> a
+// Here we defined the 5º precedence on operators in C, the shift operators.
+// It's used to evaluate bitwise values in C, or calculate exponential with 2
+// as a base.
+// eg: x , a + b , a[i] , x << 2 , x >> a
 shift_expression	::= additive_expression
 					| shift_expression LEFT_OP additive_expression
 					| shift_expression RIGHT_OP additive_expression;
 
-// eg: x , x + 2 , x - 3
+// Here we defined the 4º precedence on operators in C, the addition operators.
+// It's used to evaluate numbers values in C, in addition or subtraction.
+// eg: x , a[i] , x + 2 , x - 3 , x*2 + 3
 additive_expression	::= multiplicative_expression
 					| additive_expression ADD multiplicative_expression
 					| additive_expression SUB multiplicative_expression;
 
-// eg: x , x * 2 , x / a , x % 5
+// Here we defined the 3º precedence on operators in C, the multiplicative
+// operators like "*", "/" and "%". It's used to evaluate numbers values in
+// C, in multiplication or remainder calculation.
+// eg: x , x * 2 , x / a , x % 5 , 2*x++
 multiplicative_expression	::= cast_expression
 							| multiplicative_expression MUL cast_expression
 							| multiplicative_expression DIV cast_expression
