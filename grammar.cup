@@ -199,12 +199,24 @@ precedence nonassoc ATOMIC;
 
 start with translation_unit;
 
+// The source file with #includes, #defines and all external declarations.
+// eg: #include<stdio.h> int main() {printf("Hello, World!");}
 translation_unit	::= external_declaration
 					| translation_unit external_declaration;
 
+// At the top level of a translation unit, every C program is a sequence
+// of declarations, which declare functions and objects with external 
+// linkage. These declarations are known as external declarations because 
+// they appear outside of any function.
+// eg: int g = 32; , int main() {printf("Hello, World!");} , 
+// int i = 40; int main() {printf("%d", i);}
 external_declaration	::= function_definition
 						| declaration;
 
+// A function definition associates the function body (a sequence of declarations and 
+// statements) with the function name and parameter list. Unlike function declaration, 
+// function definitions are allowed at file scope only (there are no nested functions).
+// eg: int f(int a, int b) {return a + b;} , int f(a, b) int a, b; {return a + b;}
 function_definition	::= declaration_specifiers declarator declaration_list compound_statement
 					| declaration_specifiers declarator compound_statement;
 
@@ -355,8 +367,9 @@ block_item_list	::= block_item
 init_declarator	::= declarator ASSIGN initializer
 				| declarator:v {: RESULT=v; :};
 
-// Several varieties of expressions are known as constant expressions. They need
-// to have values available at compile time. Thus, it contains some constraints.
+// Constant values of certain types may be embedded in the source code of a 
+// C program using specialized expressions known as literals (for lvalue
+// expressions) and constants (for non-lvalue expressions).
 // eg: 12, 14, 3.14
 constant_expression	::= conditional_expression;
 
@@ -387,17 +400,22 @@ type_name	::= specifier_qualifier_list abstract_declarator
 type_qualifier_list	::= type_qualifier
 					| type_qualifier_list type_qualifier;
 
-// Here we defined the 14º precedence on operators in C, the assignment operators, 
-// which can be used to assign values (expressions) to variables. The unary operators
-// are the only ones allowed to operate on the variables receiving values.
+// Here we defined the 14º precedence on operators in C, the assignment and 
+// compound assignment operators that are binary operators that modify the 
+// variable to their left using the value to their right.
 // eg: x , a + b , i++ , x++ = a + b , a += m , i *= 2
 assignment_expression	::= conditional_expression
 						| unary_expression assignment_operator assignment_expression;
 
+// Either the single keyword void or a comma-separated list of parameters, 
+// which may end with an ellipsis parameter.
 // eg: int x, int y, ... , int x
 parameter_type_list	::= parameter_list COMMA ELLIPSIS
 					| parameter_list;
 
+// Comma-separated list of identifiers (only if this declarator is used as 
+// part of old-style function definition), must be omitted for old-style 
+// declarations that are not definitions.
 // eg: x , x, a, b
 identifier_list	::= IDENTIFIER
 				| identifier_list COMMA IDENTIFIER;
@@ -489,10 +507,15 @@ assignment_operator	::= ASSIGN
 					| XOR_ASSIGN
 					| OR_ASSIGN;
 
+// Comma-separated list of parameters.
 // eg: int x , int x, int y , int, char
 parameter_list	::= parameter_declaration
 				| parameter_list COMMA parameter_declaration;
 
+// Statements are fragments of the C program that are executed in sequence. 
+// The body of any function is a compound statement, which, in turn is a 
+// sequence of statements and declarations.
+// eg: i = 2*b; , if(i > 0) i = -1;
 statement	::= labeled_statement
 			| compound_statement
 			| expression_statement
@@ -515,9 +538,11 @@ initializer_list	::= designation initializer
 logical_or_expression	::= logical_and_expression
 						| logical_or_expression OR_OP logical_and_expression;
 
-// Its anything that can be evaluated to a value of any type available or defined.
-// Here, we define the lowest precedence (15º) of the operators on C, the "," that
-// tie expressions to be passed as functions parameters or declarations.
+// An expression is a sequence of operators and their operands, that specifies a
+// computation. Expression evaluation may produce a result (e.g., evaluation of
+// 2+2 produces the result 4), may generate side-effects (e.g. evaluation of 
+// printf("%d",4) sends the character '4' to the standard output stream), and 
+// may designate objects or functions.
 // eg: x , a = 2 , a + b , a + (-b) , x, a = 2
 expression	::= assignment_expression
 			| expression COMMA assignment_expression;
@@ -603,24 +628,35 @@ unary_operator	::= AND
 cast_expression	::= unary_expression
 				| LPAREN type_name RPAREN cast_expression;
 
+// A specific declaration, related to parameters on functions.
 // eg: int x , int* , int[][] , int
 parameter_declaration	::= declaration_specifiers declarator
 						| declaration_specifiers abstract_declarator
 						| declaration_specifiers;
 
+// Any statement can be labeled, by providing a name followed by a colon 
+// before the statement itself. It can be: target for a goto; case label in 
+// a switch statement; or a default label in a switch statement.
+// eg: begin: i = 0; , case 1: printf("End!"); , default: printf("Erro!");
 labeled_statement	::= IDENTIFIER COLON statement
 					| CASE constant_expression COLON statement
 					| DEFAULT COLON statement;
 
-// eg: ; , x = 1;
+// An expression followed by a semicolon is a statement. Most statements in a 
+// typical C program are expression statements, such as assignments or 
+// function calls.
+// eg: ; , x = 1; , f(1, 2); , x[0] = 12; , printf("Oi!");
 expression_statement	::= SEMICOLON
 						| expression SEMICOLON;
 
+// The selection statements choose between one of several statements depending 
+// on the value of an expression.
 // eg: if(x > 2) a = x; else a = y; , if(x > 2) a = x; , switch(x) a = x;
 selection_statement	::= IF LPAREN expression RPAREN statement ELSE statement
 					| IF LPAREN expression RPAREN statement
 					| SWITCH LPAREN expression RPAREN statement;
 
+// The iteration statements repeatedly execute a statement.
 // eg: while(x > 2) i++; , do i++; while(x > 2); , for(;;) i++; ,
 // for(;; i++) a = b + 2; , for(int i = 0; x > 2) i++; , for(int i = 0; x > 2; i++) x += a;
 iteration_statement	::= WHILE LPAREN expression RPAREN statement
@@ -630,6 +666,7 @@ iteration_statement	::= WHILE LPAREN expression RPAREN statement
 					| FOR LPAREN declaration expression_statement RPAREN statement
 					| FOR LPAREN declaration expression_statement expression RPAREN statement;
 
+// The jump statements unconditionally transfer flow control.
 // eg: goto start; , continue; , break; , return; , return x + 1;
 jump_statement	::= GOTO IDENTIFIER SEMICOLON
 				| CONTINUE SEMICOLON
@@ -656,8 +693,12 @@ struct_declarator_list	::= struct_declarator
 // eg: ML , MAX_INT , MIN , STEP
 enumeration_constant	::= IDENTIFIER;
 
-// The foremost basic element of an expression, comprehends identifiers,
-// numbers constants, strings, expression on parenthesis and generics selections.
+// The operands of any operator may be other expressions or they may be 
+// primary expressions (e.g. in 1+2*3, the operands of operator+ are the 
+// subexpression 2*3 and the primary expression 1). Primary expressions 
+// are any of the following: constants and literals (e.g. 2 or
+// "Hello, world"); suitably declared identifiers (e.g. n or printf); 
+// generic selections
 // eg: x , a , b , 11 , 12.2 , 0xA2 , "oi" , "tchau" , "Hi, Leo!" , 
 // (x >= 2) , (a == (i = j + i + 1)) , _Generic(x = 1, int: x = 2)
 primary_expression	::= IDENTIFIER
@@ -666,7 +707,10 @@ primary_expression	::= IDENTIFIER
 					| LPAREN expression RPAREN
 					| generic_selection;
 
-// eg: x = a + 2 , x = 2, a = 0
+// Comma-separated list of expressions (which cannot be comma operators) of 
+// any complete object type. May be omitted when calling functions that take 
+// no arguments.
+// eg: x , x + 2, a , a, b, c * 2
 argument_expression_list	::= assignment_expression
 							| argument_expression_list COMMA assignment_expression;
 
