@@ -28,10 +28,48 @@ public class Semantic {
 			}
 		}
 	}
+
+	public void validateVariableName(String variableName) throws InvalidVariableException {
+		if (!checkVariableExistence(variableName)) {
+			throw new InvalidVariableException("A variavel chamada " + variableName + " não existe!");
+		}
+	}
+
+	public void exitCurrentScope() throws InvalidFunctionException {
+		Scope scoped = scopeStack.pop();
+		checkFunctionTypeConsistency(scoped.getName(), ((Function) scoped).getDeclaredReturnType(), null);
+	}
+
+	private void checkFunctionTypeConsistency(String functionName, Type declaredType, Expression exp)
+			throws InvalidFunctionException {
+		if (exp == null && declaredType.equals(new Type("void"))) {
+			return;
+		}
+		if (exp == null && !declaredType.equals(new Type("void"))) {
+			throw new InvalidFunctionException("Falta no método '" + functionName + "' uma declaração de retorno.");
+		}
+		if (!declaredType.equals(new Type("void"))) {
+			if (!exp.isReturn()) {
+				throw new InvalidFunctionException("Falta no método '" + functionName + "' uma declaração de retorno.");
+			}
+			if (!declaredType.equals(exp.getType()) && !checkTypes(declaredType, exp.getType())) {
+				throw new InvalidFunctionException("A função " + functionName + " não retornou o tipo esperado: "
+						+ declaredType + ". Ao invés disso, está retornando o tipo: " + exp.getType());
+			}
+		} else {
+			if (exp.isReturn()) {
+				if (exp.getType() != null) {
+					throw new InvalidFunctionException("A função '" + functionName
+							+ "' com retorno declarado 'void' não deve ter retorno. Ao invés disso, está retornando o tipo: "
+							+ exp.getType() + ".");
+				}
+			}
+
+		}
+	}
 	
 	public void commitDeclaredVariables(Type type) throws Exception {
 		for (Variable variable : scopedVars) {
-			System.out.println("variable is " + variable.getIdentifier() + " and type is " + type.getName());
 			variable.setType(type);
 			addVariable(variable);
 		}
@@ -130,8 +168,10 @@ public class Semantic {
 	
 	public Variable findVariableByIdentifier(String variableName) {
 		if (!scopeStack.isEmpty() && getCurrentScope().getVariable().get(variableName) != null) {
+			Variable a = getCurrentScope().getVariable().get(variableName);
 			return getCurrentScope().getVariable().get(variableName);
 		} else {
+			Variable a = getCurrentProgram().getVariables().get(variableName);
 			return getCurrentProgram().getVariables().get(variableName);
 		}
 	}
@@ -191,6 +231,88 @@ public class Semantic {
 			}
 		}
 		return true;
+	}
+
+	public Expression getExpression(Expression le, Operation md, Expression re)
+			throws InvalidTypeException, InvalidOperationException {
+		if (re == null || le == null || checkTypes(le.getType(), re.getType())
+				|| checkTypes(re.getType(), le.getType())) {
+			switch (md) {
+			case AND:
+				return new Expression(getMajorType(le.getType(), re.getType()),
+						le.getValue() + " " + md + " " + re.getValue());
+			case OR:
+				return new Expression(getMajorType(le.getType(), re.getType()),
+						le.getValue() + " " + md + " " + re.getValue());
+			case GTEQ:
+				return new Expression(md, new Type("boolean"), le.getValue() + " " + md + " " + re.getValue());
+			case EQEQ:
+				return new Expression(md, new Type("boolean"), le.getValue() + " " + md + " " + re.getValue());
+			case LTEQ:
+				return new Expression(md, new Type("boolean"), le.getValue() + " " + md + " " + re.getValue());
+			case LT:
+				return new Expression(md, new Type("boolean"), le.getValue() + " " + md + " " + re.getValue());
+			case GT:
+				return new Expression(md, new Type("boolean"), le.getValue() + " " + md + " " + re.getValue());
+			case NOTEQ:
+				return new Expression(new Type("boolean"), le.getValue() + " " + md + " " + re.getValue());
+			case NOT:
+				return new Expression(new Type("boolean"));
+			case XOREQ:
+				return new Expression(new Type("boolean"));
+			case XOR:
+				return new Expression(getMajorType(le.getType(), re.getType()),
+						le.getValue() + " " + md + " " + re.getValue());
+			case OROR:
+				return new Expression(new Type("boolean"), le.getValue() + " " + md + " " + re.getValue());
+			case ANDAND:
+				return new Expression(new Type("boolean"), le.getValue() + " " + md + " " + re.getValue());
+			case ANDEQ:
+				return new Expression(new Type("boolean"));
+			case OREQ:
+				return new Expression(new Type("boolean"));
+			case MINUS:
+				return new Expression(getMajorType(le.getType(), re.getType()),
+						le.getValue() + " " + md + " " + re.getValue());
+			case MULT:
+				return new Expression(getMajorType(le.getType(), re.getType()),
+						le.getValue() + " " + md + " " + re.getValue());
+			case MOD:
+				return new Expression(getMajorType(le.getType(), re.getType()),
+						le.getValue() + " " + md + " " + re.getValue());
+			case PLUS:
+				return new Expression(getMajorType(le.getType(), re.getType()),
+						le.getValue() + " " + md + " " + re.getValue());
+			case DIV:
+				return new Expression(getMajorType(le.getType(), re.getType()),
+						le.getValue() + " " + md + " " + re.getValue());
+			case DIVEQ:
+				return new Expression(getMajorType(le.getType(), re.getType()));
+			case PLUSEQ:
+				return new Expression(getMajorType(le.getType(), re.getType()));
+			case MINUSEQ:
+				return new Expression(getMajorType(le.getType(), re.getType()));
+			case MULTEQ:
+				return new Expression(getMajorType(le.getType(), re.getType()));
+			case PLUSPLUS:
+				if (le != null && re == null)
+					return new Expression(le.getType(), le.getValue() + " " + md);
+				return new Expression(re.getType(), md + " " + re.getValue());
+			case MINUSMINUS:
+				if (le != null && re == null)
+					return new Expression(le.getType(), le.getValue() + " " + md);
+				return new Expression(re.getType(), md + " " + re.getValue());
+			default:
+				throw new InvalidOperationException("A operação '" + md + "' não existe!");
+			}
+		}
+
+		throw new InvalidTypeException("Operação formada pela expressão '" + le.getValue() + " " + md + " "
+				+ re.getValue() + "' não é permitida!");
+	}
+
+	private Type getMajorType(Type type1, Type type2) {
+		return builtinTypes.getTypeCompatibility().get(type1.getName()).contains(type2.getName()) ? type1 : type2;
 	}
 
 	private void pushScope(Scope scope) {
