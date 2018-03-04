@@ -1,6 +1,6 @@
 package model;
 
-public class Variable {
+public class Variable implements Parameter {
 
 	private Type type;
 	private String identifier;

@@ -134,10 +134,66 @@ public class Semantic {
 		} else {
 			return getCurrentProgram().getVariables().get(variableName);
 		}
+	}
 
+	private void checkParameters(ArrayList<Parameter> params) throws InvalidParameterException {
+		for (int i = 0; i < params.size(); i++) {
+			for (int k = i + 1; k < params.size(); k++) {
+				if (params.get(i).getIdentifier().equals(params.get(k).getIdentifier())) {
+					throw new InvalidParameterException(
+							"O parâmetro: " + params.get(k).getIdentifier() + " já foi definido.");
+				}
+			}
+		}
+	}
+
+	public void validateFunction(String functionName, ArrayList<Parameter> params, Type declaredType) throws Exception {
+		if (declaredType == null) {
+			throw new InvalidFunctionException("A função " + functionName
+					+ " está sem declaração do tipo de retorno ou não possui declaração de retorno");
+		}
+		
+		Function newFunction = new Function(functionName, params);
+		newFunction.setDeclaredReturnedType(declaredType);
+		if (functionExists(newFunction)) {
+			if (params != null) {
+				checkParameters(params);
+			}
+			addFunction(newFunction);
+		}
 	}
 	
 	public void addScopedVar(Variable v) {
 		this.scopedVars.add(v);
+	}
+	public void addFunction(Function f) throws Exception {
+		getCurrentProgram().getFunctions().add(f);
+		pushScope(f);
+		if (f.getParams() != null) {
+			for (Parameter p : f.getParams()) {
+				addVariable((Variable) p);
+			}
+		}
+	}
+
+	public boolean functionExists(Function other) throws InvalidFunctionException {
+		for (Function fun : getCurrentProgram().getFunctions()) {
+			if (fun.getName().equals(other.getName())) {
+				if (other.equals(fun)) {
+					throw new InvalidFunctionException(
+							"A função '" + other.getName() + "' já foi declarada com esses mesmos parâmetros.");
+				}
+				
+				if (other.haveSameParameters(fun) && !other.getDeclaredReturnType().equals(fun.getDeclaredReturnType())) {
+					throw new InvalidFunctionException(
+							"A função '" + other.getName() + "' com os mesmos parâmetros já foi declarada com o tipo de retorno " + fun.getDeclaredReturnType().getName());
+				}
+			}
+		}
+		return true;
+	}
+
+	private void pushScope(Scope scope) {
+		scopeStack.push(scope);
 	}
 }
