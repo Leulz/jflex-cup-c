@@ -227,7 +227,8 @@ function_definition	::= declaration_specifiers declarator declaration_list compo
           declaration_specifiers:t IDENTIFIER:id LPAREN 
           parameter_type_list_opt:pl RPAREN {: semanticAnalyser.validateFunction((String) id,(ArrayList<Parameter>) pl,(Type)t); :}
 
-           compound_statement:st {: semanticAnalyser.exitCurrentScope(); :};
+           compound_statement:st {: if (st instanceof Expression) {semanticAnalyser.exitCurrentScope((Expression) st);}
+                                    else { semanticAnalyser.exitCurrentScope();} :};
 
 parameter_type_list_opt ::= | parameter_type_list:pl {: RESULT=pl; :};
 
@@ -338,8 +339,8 @@ direct_declarator	::= IDENTIFIER:id {: RESULT = id; :}
 // Set of declarations and statements at sequence.
 // eg: int i = 0; , int i = 0; printf(i++); printf(i++);
 // TODO
-block_item_list	::= block_item
-				| block_item_list block_item;
+block_item_list	::= block_item:st {: RESULT=st; :}
+				| block_item_list block_item:st {: RESULT=st; :};
 
 // Declarators may be accompanied by initializers. The enum, struct, and union 
 // declarations may omit declarators, in which case they only introduce 
@@ -550,7 +551,7 @@ jump_statement	::= GOTO IDENTIFIER SEMICOLON
 				| CONTINUE SEMICOLON
 				| BREAK SEMICOLON
 				| RETURN SEMICOLON
-				| RETURN expression:ep SEMICOLON {: ((Expression) ep).setReturn(true); :};
+				| RETURN expression:ep SEMICOLON {: ((Expression) ep).setReturn(true); RESULT=ep; :};
 
 // Assignment of a designator_list, that usualy it's inside a declaration.
 // eg: [i][j] = , [x].a = , .left.left =

@@ -20,12 +20,10 @@ public class Semantic {
 		if (leftType.equals(rightType)) {
 			return true;
 		} else {
-			if ((leftType.getName().equals("struct") ^ rightType.getName().equals("struct"))
-					|| (leftType.getName().equals("union") ^ rightType.getName().equals("union"))) {
+			List<String> tipos = builtinTypes.getTypeCompatibility().get(leftType.getName());
+			if (tipos == null)
 				return false;
-			} else {
-				return true;
-			}
+			return tipos.contains(rightType.getName());
 		}
 	}
 
@@ -38,6 +36,21 @@ public class Semantic {
 	public void exitCurrentScope() throws InvalidFunctionException {
 		Scope scoped = scopeStack.pop();
 		checkFunctionTypeConsistency(scoped.getName(), ((Function) scoped).getDeclaredReturnType(), null);
+	}
+
+	public void exitCurrentScope(Expression exp) throws InvalidFunctionException {
+		Scope scoped = scopeStack.pop();
+
+		if (scoped instanceof Function) {
+			if (exp != null) {
+				checkFunctionTypeConsistency(scoped.getName(), ((Function) scoped).getDeclaredReturnType(), exp);
+			} else {
+				if (!((Function) scoped).getDeclaredReturnType().equals(new Type("void"))) {
+					throw new InvalidFunctionException(
+							"Falta na função '" + scoped.getName() + "' uma declaração de retorno.");
+				}
+			}
+		}
 	}
 
 	private void checkFunctionTypeConsistency(String functionName, Type declaredType, Expression exp)
