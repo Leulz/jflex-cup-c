@@ -179,7 +179,69 @@ public class Semantic {
 		}
 	}
 	
-	public Variable findVariableByIdentifier(String variableName) {
+	public boolean verifyFunctionCall(FunctionCall fc) throws InvalidFunctionException {
+		boolean nCasouNumeroDeParametros = false;
+		boolean nCasouTiposDeParametros = false;
+		
+		String mensagemDeErro = null;
+		
+		for (Function f : getCurrentProgram().getFunctions()) {
+			if (f.getName().equals(fc.getValue())) {
+				ArrayList<Parameter> p = (ArrayList<Parameter>) f.getParams();
+				if (p.size() != fc.getArgs().size()) {
+					nCasouNumeroDeParametros = true;
+					continue;
+				}
+				for (int i = 0; i < p.size(); i++) {
+					if (!p.get(i).getType().getName().equals(fc.getArgs().getExpressionList().get(i).getType().getName())) {
+						StringBuilder mensagem = new StringBuilder(
+								"Os tipos dos argumentos são incompatíveis. A chamada de método '" + fc.getValue()
+										+ "' espera os argumentos dos tipos (");
+						StringBuilder tipos = new StringBuilder();
+						for (Parameter param : f.getParams()) {
+							tipos.append("'" + param.getType().getName() + "', ");
+						}
+						tipos.setLength(tipos.length() - 2);
+						mensagem.append(tipos.toString() + "). Foram utilizados os argumentos dos tipos (");
+
+						tipos = new StringBuilder();
+						for (Expression exp : fc.getArgs().getExpressionList()) {
+							tipos.append("'" + exp.getType().getName() + "', ");
+						}
+						tipos.setLength(tipos.length() - 2);
+						mensagem.append(tipos.toString() + ").");
+
+						mensagemDeErro = mensagem.toString();
+						nCasouTiposDeParametros = true;
+						break;
+					}
+					nCasouTiposDeParametros = false;
+				}
+				
+				if (nCasouTiposDeParametros) continue;
+				
+				if (f.getDeclaredReturnType() == null) {
+					fc.setType(new Type("void"));
+				} else {
+					fc.setType(f.getDeclaredReturnType());
+				}
+				
+				return true;
+			}
+		}
+
+		if (nCasouTiposDeParametros)
+			throw new InvalidFunctionException(mensagemDeErro);
+		
+		if (nCasouNumeroDeParametros)
+			throw new InvalidFunctionException(
+					"O método chamado " + fc.getValue() + " tem a quantidade errada de argumentos");
+		else
+			throw new InvalidFunctionException("O método " + fc.getValue() + " pode não ter sido declarado ainda!");
+	}
+
+	public Variable findVariableByIdentifier(String variableName) throws InvalidVariableException {
+		validateVariableName(variableName);
 		if (!scopeStack.isEmpty() && getCurrentScope().getVariable().get(variableName) != null) {
 			Variable a = getCurrentScope().getVariable().get(variableName);
 			return getCurrentScope().getVariable().get(variableName);

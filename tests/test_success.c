@@ -18,4 +18,5 @@ float function(int param1, int param2) {
 int main(int abc) {
   int x = function(50,20);
   int a = 5;
+  return 1;
 }

@@ -403,7 +403,14 @@ conditional_expression	::= logical_or_expression:ep {: RESULT=ep; :}
 // eg: x , s[i] , ++x , --x , -b , *b , ~2 , !(a || b) , *(int) x , 
 // sizeof x , sizeof(int) , _Alignof(int)
 // TODO
-unary_expression	::= postfix_expression:ep {: RESULT=ep; :}
+unary_expression	::= postfix_expression:ep {: if (ep instanceof String) {Variable v = semanticAnalyser.findVariableByIdentifier((String) ep);
+                                              if (v.getValue() != null) {
+                                                RESULT=v.getValue();
+                                              } else {
+                                                RESULT=new Expression((Type) v.getType());
+                                              }} else {
+                                                RESULT=ep;
+                                              } :}
 					| INC_OP unary_expression
 					| DEC_OP unary_expression
 					| unary_operator cast_expression
@@ -484,8 +491,23 @@ expression	::= assignment_expression:ep {: RESULT=ep; :}
 // TODO
 postfix_expression	::= primary_expression:ep {: RESULT=ep; :}
 					| postfix_expression LBRACKET expression RBRACKET
-					| postfix_expression LPAREN RPAREN
-					| postfix_expression LPAREN argument_expression_list RPAREN
+					| postfix_expression:id LPAREN RPAREN {: FunctionCall fc = new FunctionCall((String) id); semanticAnalyser.verifyFunctionCall(fc); RESULT = fc; :}
+					| postfix_expression:id LPAREN argument_expression_list:args RPAREN {: FunctionCall fc = null;
+                                                                                if(args != null){
+                                                                                  ArrayList<Expression> list = new ArrayList<Expression>();
+                                                                                  try {
+                                                                                      list = ((ExpressionList) args).getExpressionList();
+                                                                                      fc = new FunctionCall((String) id, (ExpressionList) args);
+                                                                                  } catch (Exception except) {
+                                                                                      ExpressionList el = new ExpressionList((Expression) args);
+                                                                                      fc = new FunctionCall((String) id, el);
+                                                                                  }
+                                                                              } else {
+                                                                                  fc = new FunctionCall((String) id);
+                                                                              }
+                                                                              
+                                                                              semanticAnalyser.verifyFunctionCall(fc);
+                                                                              RESULT = fc; :}
 					| postfix_expression DOT IDENTIFIER
 					| postfix_expression PTR_OP IDENTIFIER
 					| postfix_expression INC_OP
@@ -574,8 +596,8 @@ logical_and_expression	::= inclusive_or_expression:ep {: RESULT=ep; :}
 // eg: x , a , b , 11 , 12.2 , 0xA2 , "oi" , "tchau" , "Hi, Leo!" , 
 // (x >= 2) , (a == (i = j + i + 1)) , _Generic(x = 1, int: x = 2)
 // TODO
-primary_expression	::= IDENTIFIER:id {: semanticAnalyser.validateVariableName((String) id); Variable var = semanticAnalyser.findVariableByIdentifier((String) id); RESULT = new Expression(var.getType(), var.getIdentifier()); :}
-					| constant
+primary_expression	::= IDENTIFIER:id {: RESULT=id; :}
+					| constant:c {: RESULT=c; :}
 					| string
 					| LPAREN expression RPAREN
 					| generic_selection;
@@ -585,8 +607,8 @@ primary_expression	::= IDENTIFIER:id {: semanticAnalyser.validateVariableName((S
 // no arguments.
 // eg: x , x + 2, a , a, b, c * 2
 // TODO
-argument_expression_list	::= assignment_expression
-							| argument_expression_list COMMA assignment_expression;
+argument_expression_list	::= assignment_expression:ep {: ExpressionList el = new ExpressionList((Expression) ep); RESULT = el; :}
+							| argument_expression_list:epl COMMA assignment_expression:ep {: ((ExpressionList) epl).add((Expression)ep); RESULT=epl; :};
 
 // Designator-list is a list of either array designators of the form 
 // [constant-expression] or struct/union member designators of the form
@@ -608,8 +630,8 @@ inclusive_or_expression	::= exclusive_or_expression:ep {: RESULT=ep; :}
 // expressions) and constants (for non-lvalue expressions).
 // eg: 1001 , 20.5 , 0xA3 , 0732 , MAX
 // TODO
-constant	::= I_CONSTANT
-			| F_CONSTANT
+constant	::= I_CONSTANT:c {: RESULT=new Expression(new Type("int"), c.toString()); :}
+			| F_CONSTANT:c {: RESULT=new Expression(new Type("float"), c.toString()); :}
 			| ENUMERATION_CONSTANT;
 
 // Constructs an unnamed object of specified character array type in-place, 

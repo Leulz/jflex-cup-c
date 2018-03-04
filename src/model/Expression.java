@@ -1,6 +1,6 @@
 package model;
 
-public class Expression {
+public class Expression implements ExpressionIF, Typeable {
 	private Type type;
 	private String value;
 	private boolean returnFlag;
@@ -87,5 +87,10 @@ public class Expression {
 
 	public String toString(){
 		return "Expression of type; " + getType();
+	}
+
+	@Override
+	public boolean isExpressionList() {
+		return false;
 	}
 }

@@ -51,7 +51,7 @@ public class BuiltinTypes {
 
     List<String> intCompTypes = new ArrayList<String>();
     intCompTypes.add("int");
-    intCompTypes.add("Integer");
+    intCompTypes.add("float");
 
     List<String> charCompTypes = new ArrayList<String>();
     charCompTypes.add("char");
