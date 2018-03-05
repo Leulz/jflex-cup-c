@@ -180,6 +180,7 @@ terminal	OR;			// |
 terminal	QUESTION;	// ?
 
 // Nonterminals
+non terminal begin_program;
 non terminal translation_unit, external_declaration, function_definition, declaration_list, primary_expression;
 non terminal constant, enumeration_constant, string, generic_selection, generic_assoc_list, generic_association;
 non terminal postfix_expression, argument_expression_list, unary_expression, unary_operator, cast_expression;
@@ -199,7 +200,9 @@ non terminal block_item, expression_statement, selection_statement, iteration_st
 precedence nonassoc ELSE;
 precedence nonassoc ATOMIC;
 
-start with translation_unit;
+start with begin_program;
+
+begin_program ::= translation_unit{: System.out.println("Código compilado com sucesso!!"); :};
 
 // The source file with #includes, #defines and all external declarations.
 // eg: #include<stdio.h> int main() {printf("Hello, World!");}
@@ -598,7 +601,7 @@ logical_and_expression	::= inclusive_or_expression:ep {: RESULT=ep; :}
 // TODO
 primary_expression	::= IDENTIFIER:id {: RESULT=id; :}
 					| constant:c {: RESULT=c; :}
-					| string
+					| string:s {: Expression ep = new Expression(new Type("char"),(String) s); RESULT=ep; :}
 					| LPAREN expression RPAREN
 					| generic_selection;
 
@@ -638,7 +641,7 @@ constant	::= I_CONSTANT:c {: RESULT=new Expression(new Type("int"), c.toString()
 // used when a character string needs to be embedded in source code.
 // eg: "oi" , "Hi, Dênnis!" , __func__
 // TODO
-string	::= STRING_LITERAL
+string	::= STRING_LITERAL:s {: RESULT=s; :}
 		| FUNC_NAME;
 
 // It specifies an adress related to the Identifier, like in
