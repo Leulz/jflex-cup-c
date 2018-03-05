@@ -10,3 +10,4 @@ parser.*
 sym.*
 Lexer.*
 inspiration/*
+*.h
