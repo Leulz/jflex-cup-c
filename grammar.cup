@@ -694,9 +694,8 @@ shift_expression	::= additive_expression:ep {: RESULT=ep; :}
 // eg: x , a[i] , x + 2 , x - 3 , x*2 + 3
 // TODO
 additive_expression	::= multiplicative_expression:ep {: RESULT=ep; :}
-					| additive_expression:le ADD multiplicative_expression:re {: RESULT = semanticAnalyser.getExpression((Expression) le,
-Operation.valueOf("PLUS"), (Expression) re); :}
-					| additive_expression SUB multiplicative_expression;
+					| additive_expression:le ADD multiplicative_expression:re {: RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("PLUS"), (Expression) re); :}
+					| additive_expression:le SUB multiplicative_expression:re {: RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("MINUS"), (Expression) re); :};
 
 // Here we defined the 3º precedence on operators in C, the multiplicative
 // operators like "*", "/" and "%". It's used to evaluate numbers values in
@@ -704,9 +703,9 @@ Operation.valueOf("PLUS"), (Expression) re); :}
 // eg: x , x * 2 , x / a , x % 5 , 2*x++
 // TODO
 multiplicative_expression	::= cast_expression:ep {: RESULT=ep; :}
-							| multiplicative_expression MUL cast_expression
-							| multiplicative_expression DIV cast_expression
-							| multiplicative_expression MOD cast_expression;
+							| multiplicative_expression:le MUL cast_expression:re {: RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("MULT"), (Expression) re); :}
+							| multiplicative_expression:le DIV cast_expression:re {: RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("DIV"), (Expression) re); :}
+							| multiplicative_expression:le MOD cast_expression:re {: RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("MOD"), (Expression) re); :};
 
 
 // Known but unnecessary rules for semantics.
