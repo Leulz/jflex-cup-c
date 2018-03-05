@@ -1,5 +1,7 @@
 package model;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class Expression implements ExpressionIF, Typeable {
 	private Type type;
 	private String value;
@@ -87,6 +89,34 @@ public class Expression implements ExpressionIF, Typeable {
 
 	public String toString(){
 		return "Expression of type; " + getType();
+	}
+
+	public String getAssemblyValue(boolean exceptRegister) {
+		if (this.hasRegister() && !exceptRegister) {
+			return this.register;
+		}
+
+		if (StringUtils.isNumeric(getValue())) {
+			return "#" + this.getValue();
+		}
+
+		if (getType().equals(new Type("String"))) {
+			return "\"" + this.getValue() + "\"";
+		}
+
+		if (this.value != null) {
+			if (this.value.equals("true")) {
+				return "#1";
+			} else if (this.value.equals("false")) {
+				return "#0";
+			}
+		}
+
+		return this.value;
+	}
+
+	public String getAssemblyValue() {
+		return getAssemblyValue(false);
 	}
 
 	@Override

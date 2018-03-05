@@ -1,10 +1,13 @@
 import java_cup.runtime.*;
 import model.*;
 import util.ListUtils;
+import util.Logger;
+import codegen.CodeEngine;
 import java.util.ArrayList;
 
 action code {:
   private Semantic semanticAnalyser = new Semantic();
+  private CodeEngine codeEngine = new CodeEngine();
 :};
 
 parser code {:
@@ -202,7 +205,7 @@ precedence nonassoc ATOMIC;
 
 start with begin_program;
 
-begin_program ::= translation_unit{: System.out.println("Código compilado com sucesso!!"); :};
+begin_program ::= translation_unit{: Logger.println("Código compilado com sucesso!!"); codeEngine.initialize();:};
 
 // The source file with #includes, #defines and all external declarations.
 // eg: #include<stdio.h> int main() {printf("Hello, World!");}
