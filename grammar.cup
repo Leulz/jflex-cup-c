@@ -1,13 +1,20 @@
 import java_cup.runtime.*;
 import model.*;
 import util.ListUtils;
+import util.Logger;
+import codegen.CodeEngine;
 import java.util.ArrayList;
 
 parser code {:
   private Semantic semanticAnalyser = new Semantic();
-  
+  private CodeEngine codeEngine = new CodeEngine();
+
   public parser(java.io.Reader input) {
   	super(new Lexer(input));
+  }
+
+  public String toAssemblyCode() {
+    return codeEngine.toAssemblyString();
   }
 
   /* Change the method syntax_error so when it reports a syntax
@@ -178,7 +185,7 @@ terminal	OR;			// |
 terminal	QUESTION;	// ?
 
 // Nonterminals
-non terminal begin_program;
+non terminal c_program;
 non terminal translation_unit, external_declaration, function_definition, declaration_list, primary_expression;
 non terminal constant, enumeration_constant, string, generic_selection, generic_assoc_list, generic_association;
 non terminal postfix_expression, argument_expression_list, unary_expression, unary_operator, cast_expression;
@@ -198,15 +205,17 @@ non terminal block_item, expression_statement, selection_statement, iteration_st
 precedence nonassoc ELSE;
 precedence nonassoc ATOMIC;
 
-start with begin_program;
+start with c_program;
 
-begin_program ::= translation_unit{: System.out.println("Código compilado com sucesso!!"); :};
+// The Starter point for all C programs.
+c_program ::= translation_unit {:	codeEngine.initialize(); 
+									Logger.println("c_program ::= translation_unit");	:};
 
 // The source file with #includes, #defines and all external declarations.
 // eg: #include<stdio.h> int main() {printf("Hello, World!");}
 // TODO
-translation_unit	::= external_declaration
-					| translation_unit external_declaration;
+translation_unit	::= external_declaration				{:	Logger.println("translation_unit ::= external_declaration");	:}
+					| translation_unit external_declaration	{:	Logger.println("translation_unit ::= translation_unit external_declaration");	:};
 
 // At the top level of a translation unit, every C program is a sequence
 // of declarations, which declare functions and objects with external 
@@ -215,23 +224,27 @@ translation_unit	::= external_declaration
 // eg: int g = 32; , int main() {printf("Hello, World!");} , 
 // int i = 40; int main() {printf("%d", i);}
 // TODO
-external_declaration	::= function_definition
-						| declaration;
+external_declaration	::= function_definition	{:	Logger.println("external_declaration ::= function_definition");	:}
+						| declaration			{:	Logger.println("external_declaration ::= declaration");	:};
 
 // A function definition associates the function body (a sequence of declarations and 
 // statements) with the function name and parameter list. Unlike function declaration, 
 // function definitions are allowed at file scope only (there are no nested functions).
 // eg: int f(int a, int b) {return a + b;} , int f(a, b) int a, b; {return a + b;}
 // TODO
-function_definition	::= declaration_specifiers declarator declaration_list compound_statement
-					| 
-          declaration_specifiers:t IDENTIFIER:id LPAREN 
-          parameter_type_list_opt:pl RPAREN {: semanticAnalyser.validateFunction((String) id,(ArrayList<Parameter>) pl,(Type)t); :}
+function_definition	::= declaration_specifiers declarator declaration_list compound_statement			{:	Logger.println("function_definition ::= declaration_specifiers declarator declaration_list compound_statement");	:}
+					| declaration_specifiers:t IDENTIFIER:id LPAREN parameter_type_list_opt:pl RPAREN	{:	semanticAnalyser.validateFunction((String) id,(ArrayList<Parameter>) pl,(Type)t);
+																											Logger.println("function_definition ::=  declaration_specifiers IDENTIFIER LPAREN parameter_type_list_opt RPAREN <begin>");	:}
+					compound_statement:st																{:	if (st instanceof Expression) {
+																												semanticAnalyser.exitCurrentScope((Expression) st);
+																											} else { 
+																												semanticAnalyser.exitCurrentScope();
+																											}	
+																											Logger.println("function_definition ::=	declaration_specifiers IDENTIFIER LPAREN parameter_type_list_opt RPAREN <end>");	:};
 
-           compound_statement:st {: if (st instanceof Expression) {semanticAnalyser.exitCurrentScope((Expression) st);}
-                                    else { semanticAnalyser.exitCurrentScope();} :};
-
-parameter_type_list_opt ::= | parameter_type_list:pl {: RESULT=pl; :};
+parameter_type_list_opt ::=							{:	Logger.println("parameter_type_list_opt ::=	<empty>");	:}
+						| parameter_type_list:pl	{:	RESULT=pl;
+														Logger.println("parameter_type_list_opt ::=	parameter_type_list");	:};
 
 // A declaration is a C language construct that introduces one or more identifiers 
 // into the program and specifies their meaning and properties. The enum, struct, 
@@ -239,9 +252,10 @@ parameter_type_list_opt ::= | parameter_type_list:pl {: RESULT=pl; :};
 // eg: enum COLOR {RED, GREEN, BLUE}; , const int *f(void); , int a, *b=NULL; ,
 // _Static_assert(2 + 2 == 4, "Whoa dude!");
 // TODO
-declaration	::= declaration_specifiers SEMICOLON
-			| declaration_specifiers:t init_declarator_list:v SEMICOLON {: semanticAnalyser.commitDeclaredVariables((Type) t); :}
-			| static_assert_declaration;
+declaration	::= declaration_specifiers SEMICOLON						{:	Logger.println("declaration ::=	declaration_specifiers SEMICOLON");	:}
+			| declaration_specifiers:t init_declarator_list:v SEMICOLON	{:	semanticAnalyser.commitDeclaredVariables((Type) t);
+																			Logger.println("declaration ::=	declaration_specifiers init_declarator_list SEMICOLON");	:}
+			| static_assert_declaration									{:	Logger.println("declaration ::=	static_assert_declaration");	:};
 
 // Whitespace-separated list of, in any order, one type specifier like void, arithmetic
 // or atomic types; zero or one storage-class specifiers: typedef, auto, register, static, 
@@ -251,44 +265,49 @@ declaration	::= declaration_specifiers SEMICOLON
 // eg: typedef static , static , int static , int , const static , const , 
 // inline const , inline , _Alignas() static , _Alignas()
 // TODO
-declaration_specifiers	::= storage_class_specifier declaration_specifiers:t {: RESULT = t; :}
-						| storage_class_specifier
-						| type_specifier declaration_specifiers
-						| type_specifier:t {: RESULT = t; :}
-						| type_qualifier declaration_specifiers
-						| type_qualifier
-						| function_specifier declaration_specifiers
-						| function_specifier
-						| alignment_specifier declaration_specifiers
-						| alignment_specifier;
+declaration_specifiers	::= storage_class_specifier declaration_specifiers:t	{:	RESULT = t;
+																					Logger.println("declaration_specifiers ::=	storage_class_specifier declaration_specifiers");	:}
+						| storage_class_specifier								{:	Logger.println("declaration_specifiers ::=	storage_class_specifier");	:}
+						| type_specifier declaration_specifiers					{:	Logger.println("declaration_specifiers ::=	type_specifier declaration_specifiers");	:}
+						| type_specifier:t										{:	RESULT = t; 
+																					Logger.println("declaration_specifiers ::=	type_specifier");	:}
+						| type_qualifier declaration_specifiers					{:	Logger.println("declaration_specifiers ::=	type_qualifier declaration_specifiers");	:}
+						| type_qualifier										{:	Logger.println("declaration_specifiers ::=	type_qualifier");	:}
+						| function_specifier declaration_specifiers				{:	Logger.println("declaration_specifiers ::=	function_specifier declaration_specifiers");	:}
+						| function_specifier									{:	Logger.println("declaration_specifiers ::=	function_specifier");	:}
+						| alignment_specifier declaration_specifiers			{:	Logger.println("declaration_specifiers ::=	alignment_specifier declaration_specifiers");	:}
+						| alignment_specifier									{:	Logger.println("declaration_specifiers ::=	alignment_specifier");	:};
 
 // Provides type information and/or the identifier to declare, can be a
 // pointer declaration: the declaration S * cvr D; declares D as a 
 // cvr-qualified pointer to the type determined by S.
 // eg: a , *b , *f(void) , *f(int i, int a)
 // TODO
-declarator	::= pointer direct_declarator
-			| direct_declarator:v {: RESULT=v; :};
+declarator	::= pointer direct_declarator	{:	Logger.println("declarator ::=	pointer direct_declarator");	:}
+			| direct_declarator:v 			{:	RESULT=v;
+												Logger.println("declarator ::=	direct_declarator");	:};
 
 // Set of declarations in sequence.
 // eg: int i = 0; int j = 1 , char c;
 // TODO
-declaration_list	::= declaration
-					| declaration_list declaration;
+declaration_list	::= declaration					{:	Logger.println("declaration_list ::=	declaration");	:}
+					| declaration_list declaration	{:	Logger.println("declaration_list ::=	declaration_list declaration");	:};
 
 // A compound statement, or block, is a brace-enclosed sequence of statements and declarations.
 // eg: {} , { int i = 0; } , {int i = 0; printf(i++); printf(i++);}
 // TODO
-compound_statement	::= LCURLY RCURLY
-					| LCURLY  block_item_list:st RCURLY {: RESULT=st; :};
+compound_statement	::= LCURLY RCURLY					{:	Logger.println("compound_statement ::=	LCURLY RCURLY");	:}
+					| LCURLY  block_item_list:st RCURLY {: 	RESULT=st;
+															Logger.println("compound_statement ::=	LCURLY block_item_list RCURLY");	:};
 
 
 // Comma-separated list of declarators (each declarator provides additional 
 // type information and/or the identifier to declare).
 // eg: c = 3, i = 2 , *x = &i, *y = &j , a = 1
 // TODO
-init_declarator_list	::= init_declarator:v {: RESULT=v; :}
-						| init_declarator_list COMMA init_declarator;
+init_declarator_list	::= init_declarator:v 							{:	RESULT=v;
+																			Logger.println("init_declarator_list ::=	init_declarator");:}
+						| init_declarator_list COMMA init_declarator	{:	Logger.println("init_declarator_list ::=	init_declarator_list COMMA init_declarator");	:};
 
 // All keywords or expressions that represents the type of a value: can be void, an
 // an arithmetic type, an atomic type, a name earlier introduced by a typedef declaration,
