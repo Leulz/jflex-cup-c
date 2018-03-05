@@ -3,11 +3,9 @@ import model.*;
 import util.ListUtils;
 import java.util.ArrayList;
 
-action code {:
-  private Semantic semanticAnalyser = new Semantic();
-:};
-
 parser code {:
+  private Semantic semanticAnalyser = new Semantic();
+  
   public parser(java.io.Reader input) {
   	super(new Lexer(input));
   }
