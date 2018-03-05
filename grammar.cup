@@ -180,6 +180,7 @@ terminal	OR;			// |
 terminal	QUESTION;	// ?
 
 // Nonterminals
+non terminal begin_program;
 non terminal translation_unit, external_declaration, function_definition, declaration_list, primary_expression;
 non terminal constant, enumeration_constant, string, generic_selection, generic_assoc_list, generic_association;
 non terminal postfix_expression, argument_expression_list, unary_expression, unary_operator, cast_expression;
@@ -199,7 +200,9 @@ non terminal block_item, expression_statement, selection_statement, iteration_st
 precedence nonassoc ELSE;
 precedence nonassoc ATOMIC;
 
-start with translation_unit;
+start with begin_program;
+
+begin_program ::= translation_unit{: System.out.println("Código compilado com sucesso!!"); :};
 
 // The source file with #includes, #defines and all external declarations.
 // eg: #include<stdio.h> int main() {printf("Hello, World!");}
@@ -598,7 +601,7 @@ logical_and_expression	::= inclusive_or_expression:ep {: RESULT=ep; :}
 // TODO
 primary_expression	::= IDENTIFIER:id {: RESULT=id; :}
 					| constant:c {: RESULT=c; :}
-					| string
+					| string:s {: Expression ep = new Expression(new Type("char"),(String) s); RESULT=ep; :}
 					| LPAREN expression RPAREN
 					| generic_selection;
 
@@ -638,7 +641,7 @@ constant	::= I_CONSTANT:c {: RESULT=new Expression(new Type("int"), c.toString()
 // used when a character string needs to be embedded in source code.
 // eg: "oi" , "Hi, Dênnis!" , __func__
 // TODO
-string	::= STRING_LITERAL
+string	::= STRING_LITERAL:s {: RESULT=s; :}
 		| FUNC_NAME;
 
 // It specifies an adress related to the Identifier, like in
@@ -694,9 +697,8 @@ shift_expression	::= additive_expression:ep {: RESULT=ep; :}
 // eg: x , a[i] , x + 2 , x - 3 , x*2 + 3
 // TODO
 additive_expression	::= multiplicative_expression:ep {: RESULT=ep; :}
-					| additive_expression:le ADD multiplicative_expression:re {: RESULT = semanticAnalyser.getExpression((Expression) le,
-Operation.valueOf("PLUS"), (Expression) re); :}
-					| additive_expression SUB multiplicative_expression;
+					| additive_expression:le ADD multiplicative_expression:re {: RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("PLUS"), (Expression) re); :}
+					| additive_expression:le SUB multiplicative_expression:re {: RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("MINUS"), (Expression) re); :};
 
 // Here we defined the 3º precedence on operators in C, the multiplicative
 // operators like "*", "/" and "%". It's used to evaluate numbers values in
@@ -704,9 +706,9 @@ Operation.valueOf("PLUS"), (Expression) re); :}
 // eg: x , x * 2 , x / a , x % 5 , 2*x++
 // TODO
 multiplicative_expression	::= cast_expression:ep {: RESULT=ep; :}
-							| multiplicative_expression MUL cast_expression
-							| multiplicative_expression DIV cast_expression
-							| multiplicative_expression MOD cast_expression;
+							| multiplicative_expression:le MUL cast_expression:re {: RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("MULT"), (Expression) re); :}
+							| multiplicative_expression:le DIV cast_expression:re {: RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("DIV"), (Expression) re); :}
+							| multiplicative_expression:le MOD cast_expression:re {: RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("MOD"), (Expression) re); :};
 
 
 // Known but unnecessary rules for semantics.
