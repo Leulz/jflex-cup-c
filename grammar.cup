@@ -269,10 +269,12 @@ declaration	::= declaration_specifiers:t SEMICOLON						{:	semanticAnalyser.comm
 declaration_specifiers	::= storage_class_specifier declaration_specifiers:t	{:	RESULT = t;
 																					Logger.println("declaration_specifiers ::=	storage_class_specifier declaration_specifiers");	:}
 						| storage_class_specifier								{:	Logger.println("declaration_specifiers ::=	storage_class_specifier");	:}
-						| type_specifier declaration_specifiers					{:	Logger.println("declaration_specifiers ::=	type_specifier declaration_specifiers");	:}
+						| type_specifier:t declaration_specifiers				{:	RESULT = t;
+																					Logger.println("declaration_specifiers ::=	type_specifier declaration_specifiers");	:}
 						| type_specifier:t										{:	RESULT = t; 
 																					Logger.println("declaration_specifiers ::=	type_specifier");	:}
-						| type_qualifier declaration_specifiers					{:	Logger.println("declaration_specifiers ::=	type_qualifier declaration_specifiers");	:}
+						| type_qualifier declaration_specifiers:t				{:	RESULT = t;
+																					Logger.println("declaration_specifiers ::=	type_qualifier declaration_specifiers");	:}
 						| type_qualifier										{:	Logger.println("declaration_specifiers ::=	type_qualifier");	:}
 						| function_specifier declaration_specifiers				{:	Logger.println("declaration_specifiers ::=	function_specifier declaration_specifiers");	:}
 						| function_specifier									{:	Logger.println("declaration_specifiers ::=	function_specifier");	:}
@@ -308,7 +310,8 @@ compound_statement	::= LCURLY RCURLY					{:	Logger.println("compound_statement :
 // TODO
 init_declarator_list	::= init_declarator:v 							{:	RESULT = v;
 																			Logger.println("init_declarator_list ::=	init_declarator");	:}
-						| init_declarator_list COMMA init_declarator:v	{:	Logger.println("init_declarator_list ::=	init_declarator_list COMMA init_declarator");	:};
+						| init_declarator_list COMMA init_declarator:v	{:	RESULT = v;
+																			Logger.println("init_declarator_list ::=	init_declarator_list COMMA init_declarator");	:};
 
 // All keywords or expressions that represents the type of a value: can be void, an
 // an arithmetic type, an atomic type, a name earlier introduced by a typedef declaration,
