@@ -78,6 +78,9 @@ parser code {:
   }
 :};
 
+init with	{:	codeEngine.initialize();
+				Logger.println("<begin>");	:};
+
 // Terminals (tokens returned by the scanner)
 terminal	IDENTIFIER;
 terminal	ENUMERATION_CONSTANT;
@@ -185,7 +188,6 @@ terminal	OR;			// |
 terminal	QUESTION;	// ?
 
 // Nonterminals
-non terminal c_program;
 non terminal translation_unit, external_declaration, function_definition, declaration_list, primary_expression;
 non terminal constant, enumeration_constant, string, generic_selection, generic_assoc_list, generic_association;
 non terminal postfix_expression, argument_expression_list, unary_expression, unary_operator, cast_expression;
@@ -205,12 +207,7 @@ non terminal block_item, expression_statement, selection_statement, iteration_st
 precedence nonassoc ELSE;
 precedence nonassoc ATOMIC;
 
-start with c_program;
-
-// The Starter point for all C programs.
-c_program	::= 				{:	codeEngine.initialize();
-									Logger.println("c_program ::= translation_unit <begin>");	:}
-			translation_unit	{:	Logger.println("c_program ::= translation_unit <end>");	:};
+start with translation_unit;
 
 // The source file with #includes, #defines and all external declarations.
 // eg: #include<stdio.h> int main() {printf("Hello, World!");}
