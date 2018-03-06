@@ -243,7 +243,7 @@ function_definition	::= declaration_specifiers declarator declaration_list compo
 																											Logger.println("function_definition ::=	declaration_specifiers IDENTIFIER LPAREN parameter_type_list_opt RPAREN <end>");	:};
 
 parameter_type_list_opt ::=							{:	Logger.println("parameter_type_list_opt ::=	<empty>");	:}
-						| parameter_type_list:pl	{:	RESULT=pl;
+						| parameter_type_list:pl	{:	RESULT = pl;
 														Logger.println("parameter_type_list_opt ::=	parameter_type_list");	:};
 
 // A declaration is a C language construct that introduces one or more identifiers 
@@ -285,7 +285,7 @@ declaration_specifiers	::= storage_class_specifier declaration_specifiers:t	{:	R
 // eg: a , *b , *f(void) , *f(int i, int a)
 // TODO
 declarator	::= pointer direct_declarator	{:	Logger.println("declarator ::=	pointer direct_declarator");	:}
-			| direct_declarator:v 			{:	RESULT=v;
+			| direct_declarator:v 			{:	RESULT = v;
 												Logger.println("declarator ::=	direct_declarator");	:};
 
 // Set of declarations in sequence.
@@ -298,7 +298,7 @@ declaration_list	::= declaration					{:	Logger.println("declaration_list ::=	dec
 // eg: {} , { int i = 0; } , {int i = 0; printf(i++); printf(i++);}
 // TODO
 compound_statement	::= LCURLY RCURLY					{:	Logger.println("compound_statement ::=	LCURLY RCURLY");	:}
-					| LCURLY block_item_list:st RCURLY	{: 	RESULT=st;
+					| LCURLY block_item_list:st RCURLY	{: 	RESULT = st;
 															Logger.println("compound_statement ::=	LCURLY block_item_list RCURLY");	:};
 
 
@@ -306,7 +306,7 @@ compound_statement	::= LCURLY RCURLY					{:	Logger.println("compound_statement :
 // type information and/or the identifier to declare).
 // eg: c = 3, i = 2 , *x = &i, *y = &j , a = 1
 // TODO
-init_declarator_list	::= init_declarator:v 							{:	RESULT=v;
+init_declarator_list	::= init_declarator:v 							{:	RESULT = v;
 																			Logger.println("init_declarator_list ::=	init_declarator");	:}
 						| init_declarator_list COMMA init_declarator:v	{:	Logger.println("init_declarator_list ::=	init_declarator_list COMMA init_declarator");	:};
 
@@ -360,8 +360,8 @@ direct_declarator	::= IDENTIFIER:id																		{:	RESULT = id;	:}
 // Set of declarations and statements at sequence.
 // eg: int i = 0; , int i = 0; printf(i++); printf(i++);
 // TODO
-block_item_list	::= block_item:st				{:	RESULT=st;	:}
-				| block_item_list block_item:st	{:	RESULT=st;	:};
+block_item_list	::= block_item:st				{:	RESULT = st;	:}
+				| block_item_list block_item:st	{:	RESULT = st;	:};
 
 // Declarators may be accompanied by initializers. The enum, struct, and union 
 // declarations may omit declarators, in which case they only introduce 
@@ -371,10 +371,10 @@ block_item_list	::= block_item:st				{:	RESULT=st;	:}
 init_declarator	::= declarator:id ASSIGN initializer:ep	{:	Variable v = new Variable((String) id, new Type("null"), (Expression) ep);
 															semanticAnalyser.addScopedVar(v);
 															codeEngine.generateAttribution((String) id, ep);
-															RESULT=v;	:}
+															RESULT = v;	:}
 				| declarator:id							{:	Variable v = new Variable((String) id, new Type("null"));
 															semanticAnalyser.addScopedVar(v);
-															RESULT=v;	:};
+															RESULT = v;	:};
 
 // Constant values of certain types may be embedded in the source code of a 
 // C program using specialized expressions known as literals (for lvalue
@@ -391,30 +391,29 @@ constant_expression	::= conditional_expression;
 assignment_expression	::= conditional_expression:e											{:	Logger.println("assignment_expression ::=	conditional_expression");
 																									RESULT=e;	:}
 						| unary_expression:id assignment_operator:op assignment_expression:e	{:	Logger.println("assignment_expression ::=	unary_expression assignment_operator assignment_expression");
-																									
 																									Variable var;
 																									if (id instanceof String) {
-                                                    semanticAnalyser.checkVariableAttribution((String) id, (Expression) e);
-                                                    var = semanticAnalyser.findVariableByIdentifier((String) id);
-                                                    var.setValue((Expression) e);
-                                                    RESULT = e;
-                                                    } else {
-                                                      RESULT=e;
-                                                    }
-																									  codeEngine.generateAttribution((String) id, (Operation) op, (Expression) e);	:};
+                                                    													semanticAnalyser.checkVariableAttribution((String) id, (Expression) e);
+																										var = semanticAnalyser.findVariableByIdentifier((String) id);
+																										var.setValue((Expression) e);
+																										RESULT = e;
+																									} else {
+																										RESULT = e;
+                                                    												}
+																									codeEngine.generateAttribution((String) id, (Operation) op, (Expression) e);	:};
 
 // Either the single keyword void or a comma-separated list of parameters, 
 // which may end with an ellipsis parameter.
 // eg: int x, int y, ... , int x
 // TODO
 parameter_type_list	::= parameter_list COMMA ELLIPSIS
-					| parameter_list:pl {: RESULT=pl; :};
+					| parameter_list:pl					{:	RESULT = pl;	:};
 
 // Block item, it's a declaration or a statement.
 // eg: int i = 0; , f(1, 3); , printf("Oi");
 // TODO
 block_item	::= declaration
-			| statement:st {: RESULT=st; :};
+			| statement:st	{:	RESULT = st;	:};
 
 // A declaration of an object may provide its initial value through the 
 // process known as initialization. For each declarator, the initializer, 
@@ -441,7 +440,7 @@ conditional_expression	::= logical_or_expression:ep												{:	RESULT = ep;	:
 // eg: x , s[i] , ++x , --x , -b , *b , ~2 , !(a || b) , *(int) x , 
 // sizeof x , sizeof(int) , _Alignof(int)
 // TODO
-unary_expression	::= postfix_expression:ep {: RESULT=ep; :}
+unary_expression	::= postfix_expression:ep			{: RESULT = ep; :}
 					| INC_OP unary_expression
 					| DEC_OP unary_expression
 					| unary_operator cast_expression
@@ -454,23 +453,24 @@ unary_expression	::= postfix_expression:ep {: RESULT=ep; :}
 // existed before the assignment.
 // eg: = , *= , /= , %= , += , -= , <<= , >>= , &= , ^= , |=
 // TODO
-assignment_operator	::= ASSIGN {: RESULT=Operation.valueOf("EQ"); :}
-					| MUL_ASSIGN {: RESULT=Operation.valueOf("MULTEQ"); :}
-					| DIV_ASSIGN {: RESULT=Operation.valueOf("DIVEQ"); :}
-					| MOD_ASSIGN {: RESULT=Operation.valueOf("MODEQ"); :}
-					| ADD_ASSIGN {: RESULT=Operation.valueOf("PLUSEQ"); :}
-					| SUB_ASSIGN {: RESULT=Operation.valueOf("MINUSEQ"); :}
-					| LEFT_ASSIGN {: RESULT=Operation.valueOf("LTLTEQ"); :}
-					| RIGHT_ASSIGN {: RESULT=Operation.valueOf("GTGTEQ"); :}
-					| AND_ASSIGN {: RESULT=Operation.valueOf("ANDEQ"); :}
-					| XOR_ASSIGN {: RESULT=Operation.valueOf("XOREQ"); :}
-					| OR_ASSIGN {: RESULT=Operation.valueOf("OREQ"); :};
+assignment_operator	::= ASSIGN 		{:	RESULT = Operation.valueOf("EQ");	:}
+					| MUL_ASSIGN 	{:	RESULT = Operation.valueOf("MULTEQ");	:}
+					| DIV_ASSIGN	{:	RESULT = Operation.valueOf("DIVEQ");	:}
+					| MOD_ASSIGN	{:	RESULT = Operation.valueOf("MODEQ");	:}
+					| ADD_ASSIGN	{:	RESULT = Operation.valueOf("PLUSEQ");	:}
+					| SUB_ASSIGN	{:	RESULT = Operation.valueOf("MINUSEQ");	:}
+					| LEFT_ASSIGN	{:	RESULT = Operation.valueOf("LTLTEQ");	:}
+					| RIGHT_ASSIGN	{:	RESULT = Operation.valueOf("GTGTEQ");	:}
+					| AND_ASSIGN	{:	RESULT = Operation.valueOf("ANDEQ");	:}
+					| XOR_ASSIGN	{:	RESULT = Operation.valueOf("XOREQ");	:}
+					| OR_ASSIGN		{:	RESULT = Operation.valueOf("OREQ");	:};
 
 // Comma-separated list of parameters.
 // eg: int x , int x, int y , int, char
 // TODO
-parameter_list	::= parameter_declaration:p {: RESULT = ListUtils.newList(p); :}
-				| parameter_list:pl COMMA parameter_declaration:p {: ((ArrayList<Parameter>) pl).add(0, (Parameter) p); RESULT = pl; :};
+parameter_list	::= parameter_declaration:p							{:	RESULT = ListUtils.newList(p);	:}
+				| parameter_list:pl COMMA parameter_declaration:p	{:	((ArrayList<Parameter>) pl).add(0, (Parameter) p); 
+																		RESULT = pl;	:};
 
 // Statements are fragments of the C program that are executed in sequence. 
 // The body of any function is a compound statement, which, in turn is a 
@@ -482,7 +482,7 @@ statement	::= labeled_statement
 			| expression_statement
 			| selection_statement
 			| iteration_statement
-			| jump_statement:st {: RESULT=st; :};
+			| jump_statement:st		{:	RESULT = st;	:};
 
 // A initializer-list is a non-empty comma-separated list of initializers (with 
 // an optional trailing comma), where each initializer has one of three 
@@ -501,8 +501,8 @@ initializer_list	::= designation initializer
 logical_or_expression	::= logical_and_expression:ep								{:	Logger.println("logical_or_expression ::= logical_and_expression");
 																						RESULT = ep;	:}
 						| logical_or_expression:le OR_OP logical_and_expression:re	{:	Logger.println("logical_or_expression ::= logical_or_expression OR_OP logical_and_expression");
-																						RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("OR_OP"), (Expression) re);
-																						codeEngine.operation((Expression) RESULT, (Expression) le, Operation.valueOf("OR_OP"), (Expression) re);	:};
+																						RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("OROR"), (Expression) re);
+																						codeEngine.operation((Expression) RESULT, (Expression) le, Operation.valueOf("OROR"), (Expression) re);	:};
 
 // An expression is a sequence of operators and their operands, that specifies a
 // computation. Expression evaluation may produce a result (e.g., evaluation of
@@ -523,7 +523,7 @@ expression	::= assignment_expression:ep {: RESULT=ep; :}
 // eg: x , x(20) , f() , f(a = 2, b = 3) , x.a , x->a , x++ , x-- , 
 // (Retangle){a = 2} , {Retangle}{a = 2,}
 // TODO
-postfix_expression	::= primary_expression:ep											{:	RESULT=ep;	:}
+postfix_expression	::= primary_expression:ep											{:	RESULT = ep;	:}
 					| postfix_expression LBRACKET expression RBRACKET
 					| postfix_expression:id LPAREN RPAREN								{:	FunctionCall fc = new FunctionCall((String) id); 
 																							semanticAnalyser.verifyFunctionCall(fc);
@@ -570,12 +570,12 @@ unary_operator	::= AND
 cast_expression	::= unary_expression:ep 					{:	if (ep instanceof String) {
                                               						Variable v = semanticAnalyser.findVariableByIdentifier((String) ep);
                                               						if (v.getValue() != null) {
-                                                						RESULT=v.getValue();
+                                                						RESULT = v.getValue();
                                               						} else {
-                                                						RESULT=new Expression((Type) v.getType());
+                                                						RESULT = new Expression((Type) v.getType());
                                         							}
 											  					} else {
-                                                					RESULT=ep;
+                                                					RESULT = ep;
                                               					}	:}
 				| LPAREN type_name RPAREN cast_expression;
 
@@ -635,8 +635,8 @@ designation	::= designator_list ASSIGN;
 logical_and_expression	::= inclusive_or_expression:ep									{:	Logger.println("logical_and_expression ::= inclusive_or_expression");
 																							RESULT = ep;	:}
 						| logical_and_expression:le AND_OP inclusive_or_expression:re	{:	Logger.println("logical_and_expression ::= logical_and_expression AND_OP inclusive_or_expression");
-																							RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("AND_OP"), (Expression) re);
-																							codeEngine.operation((Expression) RESULT, (Expression) le, Operation.valueOf("AND_OP"), (Expression) re);	:};
+																							RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("ANDAND"), (Expression) re);
+																							codeEngine.operation((Expression) RESULT, (Expression) le, Operation.valueOf("ANDAND"), (Expression) re);	:};
 
 // The operands of any operator may be other expressions or they may be 
 // primary expressions (e.g. in 1+2*3, the operands of operator+ are the 
@@ -759,11 +759,17 @@ additive_expression	::= multiplicative_expression:ep							{:	Logger.println("ad
 // operators like "*", "/" and "%". It's used to evaluate numbers values in
 // C, in multiplication or remainder calculation.
 // eg: x , x * 2 , x / a , x % 5 , 2*x++
-// TODO
-multiplicative_expression	::= cast_expression:ep									{:	RESULT = ep;	:}
-							| multiplicative_expression:le MUL cast_expression:re	{:	RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("MULT"), (Expression) re);	:}
-							| multiplicative_expression:le DIV cast_expression:re	{:	RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("DIV"), (Expression) re);	:}
-							| multiplicative_expression:le MOD cast_expression:re	{:	RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("MOD"), (Expression) re);	:};
+multiplicative_expression	::= cast_expression:ep									{:	Logger.println("multiplicative_expression ::= cast_expression");
+																						RESULT = ep;	:}
+							| multiplicative_expression:le MUL cast_expression:re	{:	Logger.println("multiplicative_expression ::= multiplicative_expression MUL cast_expression");
+																						RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("MULT"), (Expression) re);
+																						codeEngine.operation((Expression) RESULT, (Expression) le, Operation.valueOf("MULT"), (Expression) re);	:}
+							| multiplicative_expression:le DIV cast_expression:re	{:	Logger.println("multiplicative_expression ::= multiplicative_expression DIV cast_expression");
+																						RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("DIV"), (Expression) re);
+																						codeEngine.operation((Expression) RESULT, (Expression) le, Operation.valueOf("DIV"), (Expression) re);	:}
+							| multiplicative_expression:le MOD cast_expression:re	{:	Logger.println("multiplicative_expression ::= multiplicative_expression MOD cast_expression");
+																						RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("MOD"), (Expression) re);
+																						codeEngine.operation((Expression) RESULT, (Expression) le, Operation.valueOf("MOD"), (Expression) re);	:};
 
 
 // Known but unnecessary rules for semantics.
