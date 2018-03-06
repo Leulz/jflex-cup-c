@@ -1,4 +1,4 @@
-int const TRUE = 1, FALSE = 0;
+const int TRUE = 1, FALSE = 0;
 
 int calc(int x, int y, char op) {
 	switch(op) {
