@@ -610,7 +610,7 @@ expression_statement	::= SEMICOLON
 // TODO
 selection_statement	::= IF LPAREN expression RPAREN statement ELSE statement
 					| IF LPAREN expression RPAREN statement
-					| SWITCH LPAREN expression RPAREN statement;
+					| SWITCH LPAREN expression RPAREN statement ;
 
 // The jump statements unconditionally transfer flow control.
 // eg: goto start; , continue; , break; , return; , return x + 1;
@@ -619,19 +619,14 @@ jump_statement	::= GOTO IDENTIFIER SEMICOLON
 				| CONTINUE SEMICOLON
 				| BREAK SEMICOLON
 				| RETURN SEMICOLON
-				| RETURN expression:ep SEMICOLON	{:	((Expression) ep).setReturn(true); 
+				| RETURN expression:ep SEMICOLON	{:	Logger.println("jump_statement ::= RETURN expression SEMICOLON");
+														((Expression) ep).setReturn(true); 
 														codeEngine.returnExpression((Expression) ep);
 														RESULT=ep;	:};
-
-// Assignment of a designator_list, that usualy it's inside a declaration.
-// eg: [i][j] = , [x].a = , .left.left =
-// TODO
-designation	::= designator_list ASSIGN;
 
 // Here we defined the 11º precedence on operators in C, the logical and "&&".
 // It's used to evaluate bool values on the conditions in C.
 // eg: x , a + b , a[i] , x && a , a && b && c , a && b && !c
-// TODO
 logical_and_expression	::= inclusive_or_expression:ep									{:	Logger.println("logical_and_expression ::= inclusive_or_expression");
 																							RESULT = ep;	:}
 						| logical_and_expression:le AND_OP inclusive_or_expression:re	{:	Logger.println("logical_and_expression ::= logical_and_expression AND_OP inclusive_or_expression");
@@ -646,31 +641,26 @@ logical_and_expression	::= inclusive_or_expression:ep									{:	Logger.println(
 // generic selections
 // eg: x , a , b , 11 , 12.2 , 0xA2 , "oi" , "tchau" , "Hi, Leo!" , 
 // (x >= 2) , (a == (i = j + i + 1)) , _Generic(x = 1, int: x = 2)
-// TODO
-primary_expression	::= IDENTIFIER:id			{:	RESULT = id;	:}
-					| constant:c				{:	RESULT = c;	:}
-					| string:s					{:	Expression ep = new Expression(new Type("char"),(String) s);
-													RESULT = ep;	:}
-					| LPAREN expression RPAREN
+primary_expression	::= IDENTIFIER:id				{:	Logger.println("primary_expression ::= IDENTIFIER");
+														RESULT = id;	:}
+					| constant:c					{:	Logger.println("primary_expression ::= constant");
+														RESULT = c;	:}
+					| string:s						{:	Logger.println("primary_expression ::= string");
+														RESULT = s;	:}
+					| LPAREN expression:ep RPAREN	{:	Logger.println("primary_expression ::= LPAREN expression RPAREN");
+														RESULT = ep;	:}
 					| generic_selection;
 
 // Comma-separated list of expressions (which cannot be comma operators) of 
 // any complete object type. May be omitted when calling functions that take 
 // no arguments.
 // eg: x , x + 2, a , a, b, c * 2
-// TODO
-argument_expression_list	::= assignment_expression:ep									{:	ExpressionList el = new ExpressionList((Expression) ep);
+argument_expression_list	::= assignment_expression:ep									{:	Logger.println("argument_expression_list ::= assignment_expression");
+																								ExpressionList el = new ExpressionList((Expression) ep);
 																								RESULT = el;	:}
-							| argument_expression_list:epl COMMA assignment_expression:ep	{:	((ExpressionList) epl).add((Expression)ep);
+							| argument_expression_list:epl COMMA assignment_expression:ep	{:	Logger.println("argument_expression_list ::= argument_expression_list COMMA assignment_expression");
+																								((ExpressionList) epl).add((Expression)ep);
 																								RESULT = epl;	:};
-
-// Designator-list is a list of either array designators of the form 
-// [constant-expression] or struct/union member designators of the form
-// .identifier ;
-// eg: [i] , [i][j] , .left.left
-// TODO
-designator_list	::= designator
-				| designator_list designator;
 
 // Here we defined the 10º precedence on operators in C, the bitwise or "|".
 // It's used to evaluate bitwise values in C.
@@ -683,24 +673,19 @@ inclusive_or_expression	::= exclusive_or_expression:ep							{:	Logger.println("
 // program using specialized expressions known as literals (for lvalue 
 // expressions) and constants (for non-lvalue expressions).
 // eg: 1001 , 20.5 , 0xA3 , 0732 , MAX
-// TODO
-constant	::= I_CONSTANT:c {: RESULT=new Expression(new Type("int"), c.toString()); :}
-			| F_CONSTANT:c {: RESULT=new Expression(new Type("float"), c.toString()); :}
+constant	::= I_CONSTANT:c		{:	Logger.println("constant ::= I_CONSTANT");
+										RESULT = new Expression(new Type("int"), c.toString());	:}
+			| F_CONSTANT:c			{:	Logger.println("constant ::= F_CONSTANT");
+										RESULT = new Expression(new Type("float"), c.toString());	:}
 			| ENUMERATION_CONSTANT;
 
 // Constructs an unnamed object of specified character array type in-place, 
 // used when a character string needs to be embedded in source code.
 // eg: "oi" , "Hi, Dênnis!" , __func__
-// TODO
-string	::= STRING_LITERAL:s {: RESULT=s; :}
+string	::= STRING_LITERAL:s	{:	Logger.println("string ::= STRING_LITERAL");
+									Expression ep = new Expression(new Type("char"),(String) s);
+									RESULT = ep;	:}
 		| FUNC_NAME;
-
-// It specifies an adress related to the Identifier, like in
-// ball[12] or ball.radius.
-// eg: [i] , [12] , .radius
-// TODO
-designator	::= LBRACKET constant_expression RBRACKET
-			| DOT IDENTIFIER;
 
 // Here we defined the 9º precedence on operators in C, the bitwise 
 // exclusive or "^". It's used to evaluate bitwise values in C.
@@ -774,6 +759,23 @@ multiplicative_expression	::= cast_expression:ep									{:	Logger.println("mult
 
 // Known but unnecessary rules for semantics.
 // These rules are completely outside our scope. We can ignore them without problems.
+
+// Assignment of a designator_list, that usualy it's inside a declaration.
+// eg: [i][j] = , [x].a = , .left.left =
+designation	::= designator_list ASSIGN;
+
+// Designator-list is a list of either array designators of the form 
+// [constant-expression] or struct/union member designators of the form
+// .identifier ;
+// eg: [i] , [i][j] , .left.left
+designator_list	::= designator
+				| designator_list designator;
+
+// It specifies an adress related to the Identifier, like in
+// ball[12] or ball.radius.
+// eg: [i] , [12] , .radius
+designator	::= LBRACKET constant_expression RBRACKET
+			| DOT IDENTIFIER;
 
 // Storage-class specifiers appear in declarations. At most one specifier may be 
 // used, except that _Thread_local may be combined with static or extern to adjust
