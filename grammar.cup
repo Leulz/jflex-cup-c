@@ -572,7 +572,7 @@ cast_expression	::= unary_expression:ep 					{:	if (ep instanceof String) {
                                               						if (v.getValue() != null) {
                                                 						RESULT = v.getValue();
                                               						} else {
-                                                						RESULT = new Expression((Type) v.getType());
+                                                						RESULT = new Expression((Type) v.getType(), (String) ep); //It's a parameter
                                         							}
 											  					} else {
                                                 					RESULT = ep;
