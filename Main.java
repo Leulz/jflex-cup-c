@@ -10,8 +10,8 @@ public class Main {
 				result = p.debug_parse().value;
 			} else {
 				result = p.parse().value;
-
-				FileWriter writer = new FileWriter(argv[0] + ".h");
+				String output = argv[0].replace(".c", ".h");
+				FileWriter writer = new FileWriter(output);
 				writer.write(p.toAssemblyCode());
 				writer.close();
 			}

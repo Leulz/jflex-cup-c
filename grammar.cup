@@ -208,8 +208,9 @@ precedence nonassoc ATOMIC;
 start with c_program;
 
 // The Starter point for all C programs.
-c_program ::= translation_unit {:	codeEngine.initialize(); 
-									Logger.println("c_program ::= translation_unit");	:};
+c_program	::= 				{:	codeEngine.initialize();
+									Logger.println("c_program ::= translation_unit <begin>");	:}
+			translation_unit	{:	Logger.println("c_program ::= translation_unit <end>");	:};
 
 // The source file with #includes, #defines and all external declarations.
 // eg: #include<stdio.h> int main() {printf("Hello, World!");}

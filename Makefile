@@ -4,7 +4,7 @@ make:
 	javac -cp src/:lib/commons-lang3-3.6.jar -d bin/ src/exception/*.java src/model/*.java src/util/*.java src/codegen/*.java
 	javac -cp .:bin:lib/java-cup-11b.jar:lib/commons-lang3-3.6.jar Main.java
 clean:
-	rm -rf parser.* sym.* Lexer.* *.class *.log bin/*
+	rm -rf parser.* sym.* Lexer.* *.class *.log bin/* tests/*.h
 test:
 	touch error.log
 	truncate -s 0 error.log

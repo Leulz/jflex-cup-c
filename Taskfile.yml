@@ -3,24 +3,24 @@
 make:
   cmds:
     - jflex lexical.jflex
-    - java -cp ".;lib/java-cup-11a.jar;lib/commons-lang3-3.6.jar" java_cup.Main -interface -expect 1 grammar.cup
+    - java -cp ".;lib/java-cup-11b.jar;lib/commons-lang3-3.6.jar" java_cup.Main -interface -expect 1 grammar.cup
     - javac -cp "lib/commons-lang3-3.6.jar;src/" -d bin/ src/exception/*.java src/model/*.java src/util/*.java src/codegen/*.java
-    - javac -cp ".;bin;lib/java-cup-11a.jar;lib/commons-lang3-3.6.jar" Main.java
+    - javac -cp ".;bin;lib/java-cup-11b.jar;lib/commons-lang3-3.6.jar" Main.java
 
 clean:
   cmds:
-    - rm -rf parser.* sym.* Lexer.* *.class *.log bin/*
+    - rm -rf parser.* sym.* Lexer.* *.class *.log bin/* tests/*.h
 
 test:
   cmds:
     - touch error.log
     - truncate -s 0 error.log
-    - java -cp ".;bin;lib/java-cup-11a.jar;lib/commons-lang3-3.6.jar" Main tests/test_error.c 2>&1 | sed "s,^,Error in tests/test_error.c = ," > error1.log
-    - java -cp ".;bin;lib/java-cup-11a.jar;lib/commons-lang3-3.6.jar" Main tests/test_error2.c 2>&1 | sed "s,^,Error in tests/test_error2.c = ," > error2.log
-    - java -cp ".;bin;lib/java-cup-11a-runtime.jar;lib/commons-lang3-3.6.jar" Main tests/test_success.c 2>&1 | sed "s,^,Error in tests/test_success.c = ," > error3.log
+    - java -cp ".;bin;lib/java-cup-11b-runtime.jar;lib/commons-lang3-3.6.jar" Main tests/test_error.c 2>&1 | sed "s,^,Error in tests/test_error.c = ," > error1.log
+    - java -cp ".;bin;lib/java-cup-11b-runtime.jar;lib/commons-lang3-3.6.jar" Main tests/test_error2.c 2>&1 | sed "s,^,Error in tests/test_error2.c = ," > error2.log
+    - java -cp ".;bin;lib/java-cup-11b-runtime.jar;lib/commons-lang3-3.6.jar" Main tests/test_success.c 2>&1 | sed "s,^,Error in tests/test_success.c = ," > error3.log
     - cat error1.log error2.log error3.log > error.log
     - rm error1.log error2.log error3.log
 
 debug:
   cmds:
-    - java -cp ".;bin;lib/java-cup-11a-runtime.jar;lib/commons-lang3-3.6.jar" Main tests/test_success.c "debug"
+    - java -cp ".;bin;lib/java-cup-11b-runtime.jar;lib/commons-lang3-3.6.jar" Main tests/test_success.c "debug"
