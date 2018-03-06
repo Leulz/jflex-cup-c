@@ -232,12 +232,14 @@ external_declaration	::= function_definition	{:	Logger.println("external_declara
 // TODO
 function_definition	::= declaration_specifiers declarator declaration_list compound_statement			{:	Logger.println("function_definition ::= declaration_specifiers declarator declaration_list compound_statement");	:}
 					| declaration_specifiers:t IDENTIFIER:id LPAREN parameter_type_list_opt:pl RPAREN	{:	semanticAnalyser.validateFunction((String) id,(ArrayList<Parameter>) pl,(Type)t);
+																											codeEngine.functionDeclarationBegin((String) id, (ArrayList<Parameter>) pl, (Type) t);
 																											Logger.println("function_definition ::=  declaration_specifiers IDENTIFIER LPAREN parameter_type_list_opt RPAREN <begin>");	:}
 					compound_statement:st																{:	if (st instanceof Expression) {
 																												semanticAnalyser.exitCurrentScope((Expression) st);
 																											} else { 
 																												semanticAnalyser.exitCurrentScope();
 																											}	
+																											codeEngine.functionDeclarationEnd();
 																											Logger.println("function_definition ::=	declaration_specifiers IDENTIFIER LPAREN parameter_type_list_opt RPAREN <end>");	:};
 
 parameter_type_list_opt ::=							{:	Logger.println("parameter_type_list_opt ::=	<empty>");	:}
@@ -296,7 +298,7 @@ declaration_list	::= declaration					{:	Logger.println("declaration_list ::=	dec
 // eg: {} , { int i = 0; } , {int i = 0; printf(i++); printf(i++);}
 // TODO
 compound_statement	::= LCURLY RCURLY					{:	Logger.println("compound_statement ::=	LCURLY RCURLY");	:}
-					| LCURLY  block_item_list:st RCURLY {: 	RESULT=st;
+					| LCURLY block_item_list:st RCURLY	{: 	RESULT=st;
 															Logger.println("compound_statement ::=	LCURLY block_item_list RCURLY");	:};
 
 
@@ -386,8 +388,18 @@ constant_expression	::= conditional_expression;
 // variable to their left using the value to their right.
 // eg: x , a + b , i++ , x++ = a + b , a += m , i *= 2
 // TODO
-assignment_expression	::= conditional_expression:ep {: RESULT=ep; :}
-						| unary_expression assignment_operator assignment_expression;
+assignment_expression	::= conditional_expression:e											{:	Logger.println("assignment_expression ::=	conditional_expression");
+																									RESULT=e;	:}
+						| unary_expression:id assignment_operator:op assignment_expression:e	{:	Logger.println("assignment_expression ::=	unary_expression assignment_operator assignment_expression");
+																									
+																									Variable var;
+																									
+																									semanticAnalyser.checkVariableAttribution((String) id, (Expression) e);
+																									var = semanticAnalyser.findVariableByIdentifier((String) id);
+																									var.setValue((Expression) e);
+																									RESULT = e;
+																									
+																									codeEngine.generateAttribution((String) id, (Operation) op, (Expression) e);	:};
 
 // Either the single keyword void or a comma-separated list of parameters, 
 // which may end with an ellipsis parameter.
@@ -597,7 +609,9 @@ jump_statement	::= GOTO IDENTIFIER SEMICOLON
 				| CONTINUE SEMICOLON
 				| BREAK SEMICOLON
 				| RETURN SEMICOLON
-				| RETURN expression:ep SEMICOLON {: ((Expression) ep).setReturn(true); RESULT=ep; :};
+				| RETURN expression:ep SEMICOLON	{:	((Expression) ep).setReturn(true); 
+														codeEngine.returnExpression((Expression) ep);
+														RESULT=ep;	:};
 
 // Assignment of a designator_list, that usualy it's inside a declaration.
 // eg: [i][j] = , [x].a = , .left.left =
@@ -631,8 +645,10 @@ primary_expression	::= IDENTIFIER:id {: RESULT=id; :}
 // no arguments.
 // eg: x , x + 2, a , a, b, c * 2
 // TODO
-argument_expression_list	::= assignment_expression:ep {: ExpressionList el = new ExpressionList((Expression) ep); RESULT = el; :}
-							| argument_expression_list:epl COMMA assignment_expression:ep {: ((ExpressionList) epl).add((Expression)ep); RESULT=epl; :};
+argument_expression_list	::= assignment_expression:ep									{:	ExpressionList el = new ExpressionList((Expression) ep);
+																								RESULT = el;	:}
+							| argument_expression_list:epl COMMA assignment_expression:ep	{:	((ExpressionList) epl).add((Expression)ep);
+																								RESULT=epl;	:};
 
 // Designator-list is a list of either array designators of the form 
 // [constant-expression] or struct/union member designators of the form
