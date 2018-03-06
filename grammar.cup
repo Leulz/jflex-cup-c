@@ -393,13 +393,15 @@ assignment_expression	::= conditional_expression:e											{:	Logger.println("
 						| unary_expression:id assignment_operator:op assignment_expression:e	{:	Logger.println("assignment_expression ::=	unary_expression assignment_operator assignment_expression");
 																									
 																									Variable var;
-																									
-																									semanticAnalyser.checkVariableAttribution((String) id, (Expression) e);
-																									var = semanticAnalyser.findVariableByIdentifier((String) id);
-																									var.setValue((Expression) e);
-																									RESULT = e;
-																									
-																									codeEngine.generateAttribution((String) id, (Operation) op, (Expression) e);	:};
+																									if (id instanceof String) {
+                                                    semanticAnalyser.checkVariableAttribution((String) id, (Expression) e);
+                                                    var = semanticAnalyser.findVariableByIdentifier((String) id);
+                                                    var.setValue((Expression) e);
+                                                    RESULT = e;
+                                                    } else {
+                                                      RESULT=e;
+                                                    }
+																									  codeEngine.generateAttribution((String) id, (Operation) op, (Expression) e);	:};
 
 // Either the single keyword void or a comma-separated list of parameters, 
 // which may end with an ellipsis parameter.
@@ -439,14 +441,7 @@ conditional_expression	::= logical_or_expression:ep {: RESULT=ep; :}
 // eg: x , s[i] , ++x , --x , -b , *b , ~2 , !(a || b) , *(int) x , 
 // sizeof x , sizeof(int) , _Alignof(int)
 // TODO
-unary_expression	::= postfix_expression:ep {: if (ep instanceof String) {Variable v = semanticAnalyser.findVariableByIdentifier((String) ep);
-                                              if (v.getValue() != null) {
-                                                RESULT=v.getValue();
-                                              } else {
-                                                RESULT=new Expression((Type) v.getType());
-                                              }} else {
-                                                RESULT=ep;
-                                              } :}
+unary_expression	::= postfix_expression:ep {: RESULT=ep; :}
 					| INC_OP unary_expression
 					| DEC_OP unary_expression
 					| unary_operator cast_expression
@@ -459,17 +454,17 @@ unary_expression	::= postfix_expression:ep {: if (ep instanceof String) {Variabl
 // existed before the assignment.
 // eg: = , *= , /= , %= , += , -= , <<= , >>= , &= , ^= , |=
 // TODO
-assignment_operator	::= ASSIGN
-					| MUL_ASSIGN
-					| DIV_ASSIGN
-					| MOD_ASSIGN
-					| ADD_ASSIGN
-					| SUB_ASSIGN
-					| LEFT_ASSIGN
-					| RIGHT_ASSIGN
-					| AND_ASSIGN
-					| XOR_ASSIGN
-					| OR_ASSIGN;
+assignment_operator	::= ASSIGN {: RESULT=Operation.valueOf("EQ"); :}
+					| MUL_ASSIGN {: RESULT=Operation.valueOf("MULTEQ"); :}
+					| DIV_ASSIGN {: RESULT=Operation.valueOf("DIVEQ"); :}
+					| MOD_ASSIGN {: RESULT=Operation.valueOf("MODEQ"); :}
+					| ADD_ASSIGN {: RESULT=Operation.valueOf("PLUSEQ"); :}
+					| SUB_ASSIGN {: RESULT=Operation.valueOf("MINUSEQ"); :}
+					| LEFT_ASSIGN {: RESULT=Operation.valueOf("LTLTEQ"); :}
+					| RIGHT_ASSIGN {: RESULT=Operation.valueOf("GTGTEQ"); :}
+					| AND_ASSIGN {: RESULT=Operation.valueOf("ANDEQ"); :}
+					| XOR_ASSIGN {: RESULT=Operation.valueOf("XOREQ"); :}
+					| OR_ASSIGN {: RESULT=Operation.valueOf("OREQ"); :};
 
 // Comma-separated list of parameters.
 // eg: int x , int x, int y , int, char
@@ -567,7 +562,15 @@ unary_operator	::= AND
 // values to different types in C.
 // eg: x , a[i++] , (int) x , (float) 2 , (float) ++i
 // TODO
-cast_expression	::= unary_expression:ep {: RESULT=ep; :}
+cast_expression	::= unary_expression:ep {: if (ep instanceof String) {
+                                              Variable v = semanticAnalyser.findVariableByIdentifier((String) ep);
+                                              if (v.getValue() != null) {
+                                                RESULT=v.getValue();
+                                              } else {
+                                                RESULT=new Expression((Type) v.getType());
+                                              }} else {
+                                                RESULT=ep;
+                                              } :}
 				| LPAREN type_name RPAREN cast_expression;
 
 // A specific declaration, related to parameters on functions.

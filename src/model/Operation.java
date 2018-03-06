@@ -3,6 +3,7 @@ package model;
 public enum Operation {
     PLUS("+"),
     MINUS("-"),
+    EQ("="),
     PLUSEQ("+="),
     MINUSEQ("-="),
     MULT("*"),
