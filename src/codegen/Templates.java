@@ -126,12 +126,14 @@ public class Templates {
         return String.format("%d: BR %s\n", label, dest);
     }
 
-    public static String store(int label, String dest, String value) {
-        return String.format("%d: ST %s, %s\n", label, dest, value);
+    // Store the 64-bit quantity in registers dest and dest + 1 at address.
+    public static String store(int label, String dest, String address) {
+        return String.format("%d: ST %s, %s\n", label, dest, address);
     }
 
-    public static String load(int label, String dest, String value) {
-        return String.format("%d: LD %s, %s\n", label, dest, value);
+    // Load the 64-bit quantity at address into registers dest and dest + 1.
+    public static String load(int label, String dest, String address) {
+        return String.format("%d: LD %s, %s\n", label, dest, address);
     }
 
     public static String branchBNEZ(int label, String reg) {

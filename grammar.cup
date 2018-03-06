@@ -250,7 +250,8 @@ parameter_type_list_opt ::=							{:	Logger.println("parameter_type_list_opt ::=
 // eg: enum COLOR {RED, GREEN, BLUE}; , const int *f(void); , int a, *b=NULL; ,
 // _Static_assert(2 + 2 == 4, "Whoa dude!");
 // TODO
-declaration	::= declaration_specifiers SEMICOLON						{:	Logger.println("declaration ::=	declaration_specifiers SEMICOLON");	:}
+declaration	::= declaration_specifiers:t SEMICOLON						{:	semanticAnalyser.commitDeclaredVariables((Type) t);
+																			Logger.println("declaration ::=	declaration_specifiers SEMICOLON");	:}
 			| declaration_specifiers:t init_declarator_list:v SEMICOLON	{:	semanticAnalyser.commitDeclaredVariables((Type) t);
 																			Logger.println("declaration ::=	declaration_specifiers init_declarator_list SEMICOLON");	:}
 			| static_assert_declaration									{:	Logger.println("declaration ::=	static_assert_declaration");	:};
@@ -304,8 +305,8 @@ compound_statement	::= LCURLY RCURLY					{:	Logger.println("compound_statement :
 // eg: c = 3, i = 2 , *x = &i, *y = &j , a = 1
 // TODO
 init_declarator_list	::= init_declarator:v 							{:	RESULT=v;
-																			Logger.println("init_declarator_list ::=	init_declarator");:}
-						| init_declarator_list COMMA init_declarator	{:	Logger.println("init_declarator_list ::=	init_declarator_list COMMA init_declarator");	:};
+																			Logger.println("init_declarator_list ::=	init_declarator");	:}
+						| init_declarator_list COMMA init_declarator:v	{:	Logger.println("init_declarator_list ::=	init_declarator_list COMMA init_declarator");	:};
 
 // All keywords or expressions that represents the type of a value: can be void, an
 // an arithmetic type, an atomic type, a name earlier introduced by a typedef declaration,
@@ -313,16 +314,16 @@ init_declarator_list	::= init_declarator:v 							{:	RESULT=v;
 // eg: void , char , short , int , long , float , double , signed , unsigned ,
 // bool , _Complex , _Imaginary , _Atomic(int) , enum{ML, MN} , Retangle
 // TODO
-type_specifier	::= VOID {: RESULT = new Type("void"); :}
-				| CHAR {: RESULT = new Type("char"); :}
-				| SHORT {: RESULT = new Type("short"); :}
-				| INT:i {: RESULT = new Type("int"); :}
-				| LONG {: RESULT = new Type("long"); :}
-				| FLOAT {: RESULT = new Type("float"); :}
-				| DOUBLE {: RESULT = new Type("double"); :}
-				| SIGNED {: RESULT = new Type("signed"); :}
-				| UNSIGNED {: RESULT = new Type("unsigned"); :}
-				| BOOL {: RESULT = new Type("bool"); :}
+type_specifier	::= VOID					{:	RESULT = new Type("void");	:}
+				| CHAR						{:	RESULT = new Type("char");	:}
+				| SHORT						{:	RESULT = new Type("short");	:}
+				| INT:i						{:	RESULT = new Type("int");	:}
+				| LONG						{:	RESULT = new Type("long");	:}
+				| FLOAT						{:	RESULT = new Type("float");	:}
+				| DOUBLE					{:	RESULT = new Type("double");	:}
+				| SIGNED					{:	RESULT = new Type("signed");	:}
+				| UNSIGNED					{:	RESULT = new Type("unsigned");	:}
+				| BOOL						{:	RESULT = new Type("bool");	:}
 				| COMPLEX 
 				| IMAGINARY  
 				| atomic_type_specifier
@@ -339,7 +340,7 @@ type_specifier	::= VOID {: RESULT = new Type("void"); :}
 // eg: x , (x) , (*obj), m[] , m[*] , m[20] , x[i = 0], x(int, int) , x(), 
 // x(a, b, c)
 // TODO
-direct_declarator	::= IDENTIFIER:id {: RESULT = id; :}
+direct_declarator	::= IDENTIFIER:id																		{:	RESULT = id;	:}
 					| LPAREN declarator RPAREN
 					| direct_declarator LBRACKET RBRACKET
 					| direct_declarator LBRACKET MUL RBRACKET
@@ -357,16 +358,21 @@ direct_declarator	::= IDENTIFIER:id {: RESULT = id; :}
 // Set of declarations and statements at sequence.
 // eg: int i = 0; , int i = 0; printf(i++); printf(i++);
 // TODO
-block_item_list	::= block_item:st {: RESULT=st; :}
-				| block_item_list block_item:st {: RESULT=st; :};
+block_item_list	::= block_item:st				{:	RESULT=st;	:}
+				| block_item_list block_item:st	{:	RESULT=st;	:};
 
 // Declarators may be accompanied by initializers. The enum, struct, and union 
 // declarations may omit declarators, in which case they only introduce 
 // the enumeration constants and/or tags.
 // eg: *x = &a, c = 3 , c , *f(void) = &calc
 // TODO
-init_declarator	::= declarator:id ASSIGN initializer:ep {: Variable v = new Variable((String) id, new Type("null"), (Expression) ep); semanticAnalyser.addScopedVar(v); RESULT=v; :} //TODO
-				| declarator:id {: Variable v = new Variable((String) id, new Type("null"));semanticAnalyser.addScopedVar(v);RESULT=v; :};
+init_declarator	::= declarator:id ASSIGN initializer:ep	{:	Variable v = new Variable((String) id, new Type("null"), (Expression) ep);
+															semanticAnalyser.addScopedVar(v);
+															codeEngine.generateAttribution((String) id, ep);
+															RESULT=v;	:}
+				| declarator:id							{:	Variable v = new Variable((String) id, new Type("null"));
+															semanticAnalyser.addScopedVar(v);
+															RESULT=v;	:};
 
 // Constant values of certain types may be embedded in the source code of a 
 // C program using specialized expressions known as literals (for lvalue
@@ -403,7 +409,7 @@ block_item	::= declaration
 // TODO
 initializer	::= LCURLY initializer_list RCURLY
 			| LCURLY initializer_list COMMA RCURLY
-			| assignment_expression:ep {: RESULT=ep; :};
+			| assignment_expression:ep				{:	RESULT=ep;	:};
 
 // Here we defined the 13º precedence on operators in C, the ternary conditional "?:",
 // which allows to create a mini if-then-else calculation. Note the restriction on the values to
