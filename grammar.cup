@@ -443,7 +443,7 @@ conditional_expression	::= logical_or_expression:ep												{:	RESULT = ep;	:
 unary_expression	::= postfix_expression:ep			{: RESULT = ep; :}
 					| INC_OP unary_expression
 					| DEC_OP unary_expression
-					| unary_operator cast_expression
+					| unary_operator:uop cast_expression:ep {: semanticAnalyser.validateUnaryOperatorExpressionType((Expression) ep); RESULT=ep; :}
 					| SIZEOF unary_expression
 					| SIZEOF LPAREN type_name RPAREN
 					| ALIGNOF LPAREN type_name RPAREN;

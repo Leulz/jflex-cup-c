@@ -178,6 +178,13 @@ public class Semantic {
 			throw new IncompatibleTypeException(identifierType, expression.getType());
 		}
 	}
+
+	public void validateUnaryOperatorExpressionType(Expression expression) throws IncompatibleTypeException {
+		Type unaryOperatorType = new Type("int");
+		if (!checkTypes(unaryOperatorType, expression.getType())) {
+			throw new IncompatibleTypeException(expression.getType(), unaryOperatorType);
+		}
+	}
 	
 	public boolean verifyFunctionCall(FunctionCall fc) throws InvalidFunctionException {
 		boolean nCasouNumeroDeParametros = false;
