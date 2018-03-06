@@ -1,5 +1,5 @@
 make:
-	jflex lexical.jflex
+	java -jar lib/jflex-1.6.1.jar lexical.jflex
 	java -cp .:lib/java-cup-11b.jar:lib/commons-lang3-3.6.jar java_cup.Main -interface -expect 1 grammar.cup
 	javac -cp src/:lib/commons-lang3-3.6.jar -d bin/ src/exception/*.java src/model/*.java src/util/*.java src/codegen/*.java
 	javac -cp .:bin:lib/java-cup-11b.jar:lib/commons-lang3-3.6.jar Main.java

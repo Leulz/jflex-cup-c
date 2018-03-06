@@ -320,32 +320,32 @@ public class Semantic {
 				return new Expression(getMajorType(le.getType(), re.getType()),
 						le.getValue() + " " + md + " " + re.getValue());
 			case GTEQ:
-				return new Expression(md, new Type("boolean"), le.getValue() + " " + md + " " + re.getValue());
+				return new Expression(md, new Type("int"), le.getValue() + " " + md + " " + re.getValue());
 			case EQEQ:
-				return new Expression(md, new Type("boolean"), le.getValue() + " " + md + " " + re.getValue());
+				return new Expression(md, new Type("int"), le.getValue() + " " + md + " " + re.getValue());
 			case LTEQ:
-				return new Expression(md, new Type("boolean"), le.getValue() + " " + md + " " + re.getValue());
+				return new Expression(md, new Type("int"), le.getValue() + " " + md + " " + re.getValue());
 			case LT:
-				return new Expression(md, new Type("boolean"), le.getValue() + " " + md + " " + re.getValue());
+				return new Expression(md, new Type("int"), le.getValue() + " " + md + " " + re.getValue());
 			case GT:
-				return new Expression(md, new Type("boolean"), le.getValue() + " " + md + " " + re.getValue());
+				return new Expression(md, new Type("int"), le.getValue() + " " + md + " " + re.getValue());
 			case NOTEQ:
-				return new Expression(new Type("boolean"), le.getValue() + " " + md + " " + re.getValue());
+				return new Expression(new Type("int"), le.getValue() + " " + md + " " + re.getValue());
 			case NOT:
-				return new Expression(new Type("boolean"));
+				return new Expression(new Type("int"));
 			case XOREQ:
-				return new Expression(new Type("boolean"));
+				return new Expression(new Type("int"));
 			case XOR:
 				return new Expression(getMajorType(le.getType(), re.getType()),
 						le.getValue() + " " + md + " " + re.getValue());
 			case OROR:
-				return new Expression(new Type("boolean"), le.getValue() + " " + md + " " + re.getValue());
+				return new Expression(new Type("int"), le.getValue() + " " + md + " " + re.getValue());
 			case ANDAND:
-				return new Expression(new Type("boolean"), le.getValue() + " " + md + " " + re.getValue());
+				return new Expression(new Type("int"), le.getValue() + " " + md + " " + re.getValue());
 			case ANDEQ:
-				return new Expression(new Type("boolean"));
+				return new Expression(new Type("int"));
 			case OREQ:
-				return new Expression(new Type("boolean"));
+				return new Expression(new Type("int"));
 			case MINUS:
 				return new Expression(getMajorType(le.getType(), re.getType()),
 						le.getValue() + " " + md + " " + re.getValue());
