@@ -672,7 +672,9 @@ argument_expression_list	::= assignment_expression:ep									{:	Logger.println(
 // eg: x , a + b , a[i] , x | y , a | b | c , a ^ b & c , a << 2 | b
 inclusive_or_expression	::= exclusive_or_expression:ep							{:	Logger.println("inclusive_or_expression ::= exclusive_or_expression");
 																					RESULT = ep;	:}
-						| inclusive_or_expression OR exclusive_or_expression;
+						| inclusive_or_expression:le OR exclusive_or_expression:re {:   Logger.println("logical_or_expression ::= logical_or_expression OR_OP logical_and_expression");
+                                                                                        RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("OR"), (Expression) re);
+                                                                                        codeEngine.operation((Expression) RESULT, (Expression) le, Operation.valueOf("OR"), (Expression) re); :};
 
 // Constant values of certain types may be embedded in the source code of a C 
 // program using specialized expressions known as literals (for lvalue 
@@ -697,14 +699,18 @@ string	::= STRING_LITERAL:s	{:	Logger.println("string ::= STRING_LITERAL");
 // eg: x , a + b , a[i] , x ^ y , x ^ y && b , a ^ b ^ c
 exclusive_or_expression	::= and_expression:ep							{:	Logger.println("exclusive_or_expression ::= and_expression");
 																			RESULT = ep;	:}
-						| exclusive_or_expression XOR and_expression;
+						| exclusive_or_expression:le XOR and_expression:re {:   Logger.println("logical_or_expression ::= logical_or_expression OR_OP logical_and_expression");
+                                                                                        RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("XOR"), (Expression) re);
+                                                                                        codeEngine.operation((Expression) RESULT, (Expression) le, Operation.valueOf("XOR"), (Expression) re); :};
 
 // Here we defined the 8º precedence on operators in C, the bitwise and "&". 
 // It's used to evaluate bitwise values in C.
 // eg: x , a + b , x[i] , x & y , x & y & c , a << 2 & c
 and_expression	::= equality_expression:ep					{:	Logger.println("and_expression ::= equality_expression");
 																RESULT = ep;	:}
-				| and_expression AND equality_expression;
+				| and_expression:le AND equality_expression:re {:   Logger.println("logical_or_expression ::= logical_or_expression OR_OP logical_and_expression");
+                                                                                        RESULT = semanticAnalyser.getExpression((Expression) le, Operation.valueOf("AND"), (Expression) re);
+                                                                                        codeEngine.operation((Expression) RESULT, (Expression) le, Operation.valueOf("AND"), (Expression) re); :};
 
 // Here we defined the 7º precedence on operators in C, the equality operators.
 // "==" and "!=". It's used to evaluate boolean values in C.
