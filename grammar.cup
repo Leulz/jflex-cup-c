@@ -384,7 +384,7 @@ init_declarator	::= declarator:id ASSIGN initializer:ep	{:	Variable v = new Vari
 // expressions) and constants (for non-lvalue expressions).
 // eg: 12, 14, 3.14
 // TODO
-constant_expression	::= conditional_expression;
+constant_expression	::= conditional_expression:ep {: RESULT=ep; :};
 
 // Here we defined the 14º precedence on operators in C, the assignment and 
 // compound assignment operators that are binary operators that modify the 
@@ -446,7 +446,7 @@ conditional_expression	::= logical_or_expression:ep												{:	RESULT = ep;	:
 unary_expression	::= postfix_expression:ep				{:	RESULT = ep; :}
 					| INC_OP unary_expression
 					| DEC_OP unary_expression
-					| unary_operator:op cast_expression:re	{:	semanticAnalyser.validateUnaryOperatorExpressionType((Expression) re); 
+					| unary_operator:op cast_expression:re	{:	semanticAnalyser.validateExpressionType(new Type("int"), (Expression) re); 
 																RESULT = semanticAnalyser.getExpression((Expression) re, (Operation) op, (Expression) re);
 																codeEngine.operation((Expression) RESULT, (Expression) re, (Operation) op, (Expression) re);	:}
 					| SIZEOF unary_expression
@@ -615,7 +615,7 @@ expression_statement	::= SEMICOLON
 // TODO
 selection_statement	::= IF LPAREN expression RPAREN statement ELSE statement
 					| IF LPAREN expression RPAREN statement
-					| SWITCH LPAREN expression RPAREN statement ;
+					| SWITCH LPAREN expression:ep RPAREN statement {:  :};
 
 // The jump statements unconditionally transfer flow control.
 // eg: goto start; , continue; , break; , return; , return x + 1;

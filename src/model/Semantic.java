@@ -179,10 +179,9 @@ public class Semantic {
 		}
 	}
 
-	public void validateUnaryOperatorExpressionType(Expression expression) throws IncompatibleTypeException {
-		Type unaryOperatorType = new Type("int");
-		if (!checkTypes(unaryOperatorType, expression.getType())) {
-			throw new IncompatibleTypeException(expression.getType(), unaryOperatorType);
+	public void validateExpressionType(Type expectedType, Expression expression) throws IncompatibleTypeException {
+		if (!checkTypes(expectedType, expression.getType())) {
+			throw new IncompatibleTypeException(expression.getType(), expectedType);
 		}
 	}
 	

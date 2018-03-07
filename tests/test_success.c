@@ -8,7 +8,7 @@
 int i;
 
 float function(int param1, int param2) {
-  char b = "asd";
+  char b = "asd" + "a";
   int a = !1 && 2;
   int ans = param1 + param2 - 2 * 7;
   for(int i = 0; i<10; i++) {
