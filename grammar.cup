@@ -443,10 +443,12 @@ conditional_expression	::= logical_or_expression:ep												{:	RESULT = ep;	:
 // eg: x , s[i] , ++x , --x , -b , *b , ~2 , !(a || b) , *(int) x , 
 // sizeof x , sizeof(int) , _Alignof(int)
 // TODO
-unary_expression	::= postfix_expression:ep			{: RESULT = ep; :}
+unary_expression	::= postfix_expression:ep				{:	RESULT = ep; :}
 					| INC_OP unary_expression
 					| DEC_OP unary_expression
-					| unary_operator:uop cast_expression:ep {: semanticAnalyser.validateUnaryOperatorExpressionType((Expression) ep); RESULT=ep; :}
+					| unary_operator:op cast_expression:re	{:	semanticAnalyser.validateUnaryOperatorExpressionType((Expression) re); 
+																RESULT = semanticAnalyser.getExpression((Expression) re, (Operation) op, (Expression) re);
+																codeEngine.operation((Expression) RESULT, (Expression) re, (Operation) op, (Expression) re);	:}
 					| SIZEOF unary_expression
 					| SIZEOF LPAREN type_name RPAREN
 					| ALIGNOF LPAREN type_name RPAREN;
@@ -563,7 +565,7 @@ unary_operator	::= AND
 				| ADD
 				| SUB
 				| COMPLEMENT
-				| NE;
+				| NE			{:	RESULT = Operation.valueOf("NOT");	:};
 
 // Here we defined one of the operators at 2º precedence in C, the cast
 // operation like "(int) x" or "(float) 2 / 12". It's used to transform 

@@ -29,7 +29,7 @@ int turnFloatToInt(float x) {
 	return (int) x;
 }
 
-int turnStringToInt(char *s) {
+int turnStringToInt(char s) {
 	return 1;
 }
 
