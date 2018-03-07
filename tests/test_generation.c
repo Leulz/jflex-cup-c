@@ -33,17 +33,17 @@ int turnStringToInt(char s) {
 	return 1;
 }
 
-int main(void) {
-	calc(TRUE, FALSE, '|');
-	calc(TRUE, FALSE, '&');
-	calc(TRUE, turnStringToInt("oi"), '^');
-	calc(TRUE, FALSE, 'x');
-	calc(TRUE, FALSE, '>');
-	calc(0, 021, 'N');
-	calc(2, 3, '+');
-	calc(3, 444, '-');
-	calc(turnFloatToInt(444451.0), 0x545, '/');
-	calc(5, 23, '*');
+int main() {
+	calc(TRUE, FALSE, "|");
+	calc(TRUE, FALSE, "&");
+	calc(TRUE, turnStringToInt("oi"), "^");
+	calc(TRUE, FALSE, "x");
+	calc(TRUE, FALSE, ">");
+	calc(0, 021, "N");
+	calc(2, 3, "+");
+	calc(3, 444, "-");
+	calc(turnFloatToInt(444451.0), 0x545, "/");
+	calc(5, 23, "*");
 	
 	return 0;
 }

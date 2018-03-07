@@ -572,17 +572,17 @@ unary_operator	::= AND
 // values to different types in C.
 // eg: x , a[i++] , (int) x , (float) 2 , (float) ++i
 // TODO
-cast_expression	::= unary_expression:ep 					{:	if (ep instanceof String) {
-                                              						Variable v = semanticAnalyser.findVariableByIdentifier((String) ep);
-                                              						if (v.getValue() != null) {
-                                                						RESULT = v.getValue();
-                                              						} else {
-                                                						RESULT = new Expression((Type) v.getType(), (String) ep); //It's a parameter
-                                        							}
-											  					} else {
-                                                					RESULT = ep;
-                                              					}	:}
-				| LPAREN type_name RPAREN cast_expression;
+cast_expression	::= unary_expression:ep 						{:	if (ep instanceof String) {
+																		Variable v = semanticAnalyser.findVariableByIdentifier((String) ep);
+																		if (v.getValue() != null) {
+																			RESULT = v.getValue();
+																		} else {
+																			RESULT = new Expression((Type) v.getType(), (String) ep); //It's a parameter
+																		}
+																	} else {
+																		RESULT = ep;
+																	}	:}
+				| LPAREN type_name RPAREN cast_expression:ep	{:	RESULT = ep;	:};
 
 // A specific declaration, related to parameters on functions.
 // eg: int x , int* , int[][] , int
